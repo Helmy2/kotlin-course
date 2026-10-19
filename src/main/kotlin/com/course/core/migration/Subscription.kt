@@ -1,28 +1,34 @@
 package com.course.core.migration
 
-/**
- * Idiomatic Kotlin replacement for LegacySubscription.java.
- *
- * TODO: Task 1 - Refactor into an idiomatic Kotlin class (<25 lines):
- * - Primary constructor with val id, val customerId, planCode = "FREE", maxSeats = 5
- * - init block enforcing id.isNotBlank(), customerId.isNotBlank(), maxSeats >= 1
- * - Properties planCode, maxSeats, isCancelled with private set
- * - Domain methods upgrade(newPlanCode, newMaxSeats) and cancel()
- */
 class Subscription(
     val id: String,
-    val customerId: String
+    val customerId: String,
+    planCode: String = "FREE",
+    maxSeats: Int = 5
 ) {
-    // TODO: Complete implementation
-    val planCode: String = "FREE"
-    val maxSeats: Int = 5
-    val isCancelled: Boolean = false
+    var planCode: String = planCode.uppercase()
+        private set
+
+    var maxSeats: Int = maxSeats
+        private set
+
+    var isCancelled: Boolean = false
+        private set
+
+    init {
+        require(id.isNotBlank()) { "id required" }
+        require(customerId.isNotBlank()) { "customerId required" }
+        require(maxSeats >= 1) { "maxSeats must be >= 1" }
+    }
 
     fun upgrade(newPlanCode: String, newMaxSeats: Int) {
-        throw NotImplementedError("upgrade is not yet implemented")
+        check(!isCancelled) { "Cannot upgrade cancelled subscription" }
+        require(newMaxSeats >= this.maxSeats) { "Downgrade not allowed via upgrade()" }
+        this.planCode = newPlanCode.uppercase()
+        this.maxSeats = newMaxSeats
     }
 
     fun cancel() {
-        throw NotImplementedError("cancel is not yet implemented")
+        this.isCancelled = true
     }
 }
