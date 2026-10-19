@@ -1,0 +1,42 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import SlideDeck from '../../components/SlideDeck.astro';
+
+export function getStaticPaths() {
+	return [
+		{
+			params: { slug: 'core-kotlin' },
+			props: {
+				title: '01. Core Kotlin Concepts',
+				file: '05. Core Kotlin Concepts.md',
+				handbookSlug: 'core-kotlin',
+			},
+		},
+		{
+			params: { slug: 'null-safety' },
+			props: {
+				title: '02. Null Safety & Advanced Features',
+				file: '06. Null Safety and Advanced Features.md',
+				handbookSlug: 'null-safety',
+			},
+		},
+		{
+			params: { slug: 'jvm-coroutines' },
+			props: {
+				title: '03. JVM Interoperability & Coroutines',
+				file: '07. JVM Interoperability and Coroutines.md',
+				handbookSlug: 'jvm-coroutines',
+			},
+		},
+	];
+}
+
+const { title, file, handbookSlug } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+const filePath = path.resolve(`../docs/${file}`);
+const markdown = fs.readFileSync(filePath, 'utf-8');
+const backUrl = `${baseUrl}/${handbookSlug}/`;
+---
+
+<SlideDeck title={title} markdown={markdown} backUrl={backUrl} />

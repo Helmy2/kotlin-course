@@ -1,0 +1,26 @@
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.kotlin/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Node / Astro Site ###
+node_modules/
+site/node_modules/
+site/dist/
+site/.astro/
+site/src/content/docs/*.md
+site/src/content/docs/reference/
+!site/src/content/docs/index.md

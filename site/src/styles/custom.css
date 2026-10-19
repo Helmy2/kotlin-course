@@ -1,0 +1,647 @@
+/* Architectural Blueprint Design System for Design Patterns & Clean Code */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+	/* Core Palette: Technical Blueprint Slate */
+	--sl-font-system-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--sl-font-system-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+	--sl-color-accent-low: #0f2338;
+	--sl-color-accent: #0284c7;
+	--sl-color-accent-high: #7dd3fc;
+
+	--arch-canvas: #0a0e17;
+	--arch-surface: #111726;
+	--arch-surface-raised: #182032;
+	--arch-border: #1f2a3f;
+	--arch-border-active: #38bdf8;
+	--arch-ink-primary: #f1f5f9;
+	--arch-ink-secondary: #94a3b8;
+	--arch-ink-muted: #64748b;
+	--arch-cyan: #38bdf8;
+	--arch-amber: #f59e0b;
+	--arch-emerald: #10b981;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #e0f2fe;
+	--sl-color-accent: #0284c7;
+	--sl-color-accent-high: #0369a1;
+
+	--arch-canvas: #f8fafc;
+	--arch-surface: #ffffff;
+	--arch-surface-raised: #f1f5f9;
+	--arch-border: #cbd5e1;
+	--arch-border-active: #0284c7;
+	--arch-ink-primary: #0f172a;
+	--arch-ink-secondary: #475569;
+	--arch-ink-muted: #94a3b8;
+}
+
+/* Starlight Layout & Typography Refinements */
+body {
+	font-family: var(--sl-font-system-sans);
+	background-color: var(--arch-canvas);
+	color: var(--arch-ink-primary);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Constrain line lengths for reading comfort on standard prose */
+.sl-markdown-content {
+	max-width: 76ch;
+	font-size: 1.05rem;
+	line-height: 1.75;
+}
+
+/* Allow interactive reference tools, tables, and matrices to span full container width */
+.sl-markdown-content:has(.matrix-wrapper),
+.sl-markdown-content:has(.tradeoffs-guide-root),
+.sl-markdown-content:has(.branch-catalog-root),
+.sl-markdown-content:has(.interactive-diagram-container),
+.sl-markdown-content:has(.not-content) {
+	max-width: 100% !important;
+}
+
+/* Preserve comfortable reading width for prose elements even inside expanded containers */
+.sl-markdown-content:has(.matrix-wrapper) > p,
+.sl-markdown-content:has(.tradeoffs-guide-root) > p,
+.sl-markdown-content:has(.branch-catalog-root) > p {
+	max-width: 76ch;
+}
+
+/* ==========================================================================
+   Panel Visibility & Focus Mode Engine
+   ========================================================================== */
+
+/* Fix Starlight container constraints for wide tools & matrices */
+.content-panel:has(.matrix-wrapper),
+.content-panel:has(.tradeoffs-guide-root),
+.content-panel:has(.branch-catalog-root) {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+.content-panel:has(.matrix-wrapper) .sl-container,
+.content-panel:has(.tradeoffs-guide-root) .sl-container,
+.content-panel:has(.branch-catalog-root) .sl-container {
+	max-width: 100% !important;
+	width: 100% !important;
+	margin-inline: 0 !important;
+	--sl-content-margin-inline: 0 !important;
+}
+
+/* 1. Left Sidebar Hidden */
+html[data-sidebar-hidden="true"] {
+	--sl-content-inline-start: 0rem !important;
+	--sl-content-margin-inline: auto !important;
+}
+
+html[data-sidebar-hidden="true"] .sidebar,
+html[data-sidebar-hidden="true"] .sidebar-pane,
+html[data-sidebar-hidden="true"] sl-sidebar-pane,
+html[data-sidebar-hidden="true"] #starlight__sidebar {
+	display: none !important;
+	width: 0 !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+html[data-sidebar-hidden="true"] .main-frame {
+	padding-inline-start: 0rem !important;
+}
+
+html[data-sidebar-hidden="true"] .header {
+	--__sidebar-width: 0rem !important;
+}
+
+html[data-sidebar-hidden="true"] .sl-container {
+	--sl-content-margin-inline: auto !important;
+	margin-inline: auto !important;
+}
+
+/* 2. Right TOC Hidden */
+html[data-toc-hidden="true"] .right-sidebar-container,
+html[data-toc-hidden="true"] aside.right-sidebar-container,
+html[data-toc-hidden="true"] .right-sidebar {
+	display: none !important;
+	width: 0 !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+html[data-toc-hidden="true"] .main-pane,
+html[data-toc-hidden="true"] :where([data-has-sidebar][data-has-toc]) .main-pane {
+	width: 100% !important;
+	max-width: 100% !important;
+	--sl-content-margin-inline: auto !important;
+}
+
+html[data-toc-hidden="true"] .sl-container {
+	--sl-content-margin-inline: auto !important;
+	margin-inline: auto !important;
+}
+
+/* 3. Focus / Zen Mode (Both panels closed, centered/full width, NO right shift) */
+html[data-focus-mode="true"] {
+	--sl-content-inline-start: 0rem !important;
+	--sl-content-width: 100% !important;
+	--sl-content-margin-inline: 0 !important;
+}
+
+html[data-focus-mode="true"] .sidebar,
+html[data-focus-mode="true"] .sidebar-pane,
+html[data-focus-mode="true"] sl-sidebar-pane,
+html[data-focus-mode="true"] #starlight__sidebar,
+html[data-focus-mode="true"] nav.sidebar,
+html[data-focus-mode="true"] .right-sidebar-container,
+html[data-focus-mode="true"] aside.right-sidebar-container,
+html[data-focus-mode="true"] .right-sidebar {
+	display: none !important;
+	width: 0 !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+html[data-focus-mode="true"] .main-frame {
+	padding-inline-start: 0rem !important;
+}
+
+html[data-focus-mode="true"] .main-pane,
+html[data-focus-mode="true"] :where([data-has-sidebar][data-has-toc]) .main-pane {
+	width: 100% !important;
+	max-width: 100% !important;
+	margin: 0 !important;
+	order: unset !important;
+}
+
+html[data-focus-mode="true"] .content-panel {
+	width: 100% !important;
+	max-width: 100% !important;
+	padding-inline: clamp(1.25rem, 3vw, 2.5rem) !important;
+}
+
+html[data-focus-mode="true"] .sl-container {
+	width: 100% !important;
+	max-width: 100% !important;
+	margin-inline: 0 !important;
+	--sl-content-margin-inline: 0 !important;
+}
+
+html[data-focus-mode="true"] .sl-markdown-content {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+/* Explicit wide desktop override to prevent Starlight's 72rem+ right-shifting */
+@media (min-width: 72rem) {
+	html[data-focus-mode="true"] .sl-container,
+	html[data-sidebar-hidden="true"] .sl-container,
+	.content-panel:has(.matrix-wrapper) .sl-container,
+	.content-panel:has(.tradeoffs-guide-root) .sl-container,
+	.content-panel:has(.branch-catalog-root) .sl-container {
+		margin-inline: 0 !important;
+		max-width: 100% !important;
+	}
+
+	html[data-focus-mode="true"] .main-pane,
+	html[data-focus-mode="true"] :is([data-has-sidebar][data-has-toc]) .main-pane,
+	html[data-sidebar-hidden="true"] .main-pane,
+	html[data-sidebar-hidden="true"] :is([data-has-sidebar][data-has-toc]) .main-pane {
+		--sl-content-margin-inline: 0 !important;
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+}
+
+.sl-markdown-content h1 {
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	color: var(--arch-ink-primary);
+	line-height: 1.2;
+}
+
+.sl-markdown-content h2 {
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	border-bottom: 1px solid var(--arch-border);
+	padding-bottom: 0.5rem;
+	margin-top: 2.5rem;
+	color: var(--arch-ink-primary);
+}
+
+.sl-markdown-content h3 {
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--arch-cyan);
+	margin-top: 2rem;
+}
+
+.sl-markdown-content code {
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.88em;
+	border-radius: 4px;
+	padding: 0.2em 0.4em;
+	background: var(--arch-surface-raised);
+	border: 1px solid var(--arch-border);
+}
+
+/* Distinctive Slide Deck Launcher Bar */
+.slide-launch-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: var(--arch-surface);
+	border: 1px solid var(--arch-border);
+	border-left: 4px solid var(--arch-cyan);
+	border-radius: 6px;
+	padding: 1.1rem 1.4rem;
+	margin: 1.5rem 0 2.5rem 0;
+	gap: 1.5rem;
+}
+
+.slide-launch-info {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.slide-launch-kicker {
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--arch-cyan);
+	letter-spacing: 0.04em;
+}
+
+.slide-launch-heading {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--arch-ink-primary);
+}
+
+.slide-launch-subtext {
+	font-size: 0.875rem;
+	color: var(--arch-ink-secondary);
+	margin: 0;
+}
+
+.slide-launch-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.65rem 1.25rem;
+	background: #0284c7;
+	color: #ffffff !important;
+	font-weight: 600;
+	font-size: 0.9rem;
+	border-radius: 6px;
+	text-decoration: none !important;
+	white-space: nowrap;
+	transition: background-color 0.15s ease;
+}
+
+.slide-launch-action:hover {
+	background: #0369a1;
+}
+
+@media (max-width: 640px) {
+	.slide-launch-bar {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.slide-launch-action {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* Instructor Profile Card */
+.instructor-card {
+	background: var(--arch-surface);
+	border: 1px solid var(--arch-border);
+	border-left: 4px solid var(--arch-cyan);
+	border-radius: 6px;
+	padding: 1.75rem;
+	margin: 2rem 0;
+	display: flex;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.instructor-card-badge {
+	width: 52px;
+	height: 52px;
+	min-width: 52px;
+	border-radius: 6px;
+	background: var(--arch-surface-raised);
+	border: 1px solid var(--arch-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--sl-font-system-mono);
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--arch-cyan);
+}
+
+.instructor-card-body {
+	flex: 1;
+}
+
+.instructor-card-kicker {
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--arch-cyan);
+	letter-spacing: 0.05em;
+	margin-bottom: 0.25rem;
+}
+
+.instructor-card-name {
+	font-size: 1.35rem;
+	font-weight: 800;
+	color: var(--arch-ink-primary);
+	margin-bottom: 0.5rem;
+}
+
+.instructor-card-desc {
+	font-size: 0.95rem;
+	color: var(--arch-ink-secondary);
+	line-height: 1.6;
+	margin-bottom: 1.25rem;
+}
+
+.instructor-card-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	align-items: center;
+}
+
+.instructor-pill-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.4rem 0.85rem;
+	background: var(--arch-surface-raised);
+	border: 1px solid var(--arch-border);
+	border-radius: 4px;
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.8rem;
+	color: var(--arch-ink-primary) !important;
+	text-decoration: none !important;
+	transition: all 0.15s ease;
+}
+
+.instructor-pill-link:hover {
+	border-color: var(--arch-cyan);
+	color: var(--arch-cyan) !important;
+}
+
+@media (max-width: 640px) {
+	.instructor-card {
+		flex-direction: column;
+	}
+}
+
+/* ==========================================================================
+   Interactive Architectural & UML Diagram Engine
+   ========================================================================== */
+
+.interactive-diagram-container {
+	margin: 2.25rem 0;
+	background: var(--arch-surface);
+	border: 1px solid var(--arch-border);
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	font-family: var(--sl-font-system-sans);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	position: relative;
+}
+
+.interactive-diagram-container:hover {
+	border-color: var(--arch-border-active);
+}
+
+/* Header & Controls Toolbar */
+.diag-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.65rem 1rem;
+	background: var(--arch-surface-raised);
+	border-bottom: 1px solid var(--arch-border);
+	gap: 1rem;
+	flex-wrap: wrap;
+	user-select: none;
+}
+
+.diag-header-left {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.diag-title-area {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.diag-badge-icon {
+	font-size: 1rem;
+}
+
+.diag-group-title {
+	font-size: 0.88rem;
+	font-weight: 700;
+	color: var(--arch-ink-primary);
+	font-family: var(--sl-font-system-sans);
+	letter-spacing: -0.01em;
+}
+
+/* Diagram Tabs (Class vs Sequence) */
+.diag-tabs {
+	display: inline-flex;
+	background: var(--arch-surface);
+	border: 1px solid var(--arch-border);
+	border-radius: 6px;
+	padding: 2px;
+	gap: 2px;
+}
+
+.diag-tab-btn {
+	background: transparent;
+	border: none;
+	padding: 0.3rem 0.75rem;
+	border-radius: 4px;
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: var(--arch-ink-muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.diag-tab-btn:hover {
+	color: var(--arch-ink-primary);
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.diag-tab-btn.active {
+	background: var(--arch-surface-raised);
+	color: var(--arch-cyan);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+	border: 1px solid var(--arch-border-active);
+}
+
+/* Toolbar Controls */
+.diag-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	flex-wrap: wrap;
+}
+
+.diag-zoom-group,
+.diag-action-group {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	background: var(--arch-surface);
+	border: 1px solid var(--arch-border);
+	border-radius: 6px;
+	padding: 2px 4px;
+}
+
+.diag-tool-btn {
+	background: transparent;
+	border: none;
+	color: var(--arch-ink-secondary);
+	padding: 0.35rem 0.55rem;
+	border-radius: 4px;
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	transition: all 0.15s ease;
+}
+
+.diag-tool-btn:hover {
+	color: var(--arch-ink-primary);
+	background: var(--arch-surface-raised);
+}
+
+.diag-zoom-level {
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--arch-cyan);
+	min-width: 42px;
+	text-align: center;
+	cursor: pointer;
+	padding: 0 0.2rem;
+}
+
+/* Stage & Viewport */
+.diag-stage {
+	position: relative;
+	width: 100%;
+	height: 480px;
+	background: var(--arch-canvas);
+	background-image: 
+		radial-gradient(var(--arch-border) 1px, transparent 1px);
+	background-size: 20px 20px;
+	overflow: hidden;
+	cursor: grab;
+	outline: none;
+}
+
+.diag-stage.is-panning {
+	cursor: grabbing;
+}
+
+.diag-viewport {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.diag-panzoom-target {
+	transform-origin: center center;
+	transition: transform 0.05s linear;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	will-change: transform;
+}
+
+.diag-panzoom-target svg {
+	max-width: none !important;
+	height: auto;
+	pointer-events: auto;
+	filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+.diag-stage-hint {
+	position: absolute;
+	bottom: 0.5rem;
+	right: 0.75rem;
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.68rem;
+	color: var(--arch-ink-muted);
+	pointer-events: none;
+	opacity: 0.8;
+}
+
+.diag-stage-hint kbd {
+	background: var(--arch-surface-raised);
+	border: 1px solid var(--arch-border);
+	border-radius: 3px;
+	padding: 0.1rem 0.3rem;
+	color: var(--arch-ink-primary);
+}
+
+/* Fullscreen Lightbox Mode */
+.interactive-diagram-container.is-fullscreen {
+	position: fixed !important;
+	inset: 0 !important;
+	width: 100vw !important;
+	height: 100vh !important;
+	z-index: 99999 !important;
+	border-radius: 0 !important;
+	margin: 0 !important;
+	border: none !important;
+	display: flex !important;
+	flex-direction: column !important;
+	background: var(--arch-canvas) !important;
+}
+
+.interactive-diagram-container.is-fullscreen .diag-stage {
+	flex: 1 !important;
+	height: auto !important;
+}
+
+.interactive-diagram-container.is-fullscreen .diag-header {
+	padding: 0.75rem 1.5rem;
+}
+
+.diagram-error {
+	padding: 1.5rem;
+	color: #ef4444;
+	font-family: var(--sl-font-system-mono);
+	font-size: 0.85rem;
+	background: rgba(239, 68, 68, 0.1);
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	border-radius: 6px;
+	margin: 1rem;
+}
+

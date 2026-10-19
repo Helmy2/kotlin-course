@@ -1,0 +1,148 @@
+---
+title: "Kotlin for Backend Engineering"
+description: "A production-grade curriculum covering modern server-side Kotlin, Java Interop, Spring Boot integration, and Coroutines."
+---
+
+## Curriculum Architecture
+
+This course is structured across **3 Core Days** spanning 9 hands-on concepts, moving from foundational syntax and expression-oriented design to compile-time null safety, polyglot JVM interoperability, and high-throughput structured concurrency.
+
+<div class="module-matrix">
+  <div class="matrix-row">
+    <div class="matrix-col-id">01</div>
+    <div class="matrix-col-content">
+      <h3>Day 1: Core Kotlin Concepts & Java Migration</h3>
+      <p>Modern backend environment setup, expressions over statements (<code>when</code>, <code>if</code>), range progressions, default and named arguments, class initialization, properties vs fields, and strangler-fig Java migration.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/core-kotlin/">Handbook</a>
+        <span>·</span>
+        <a href="/kotlin-course/slides/core-kotlin/" target="_blank">Slide deck</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-row">
+    <div class="matrix-col-id">02</div>
+    <div class="matrix-col-content">
+      <h3>Day 2: Null Safety & Advanced Idioms</h3>
+      <p>Moving NullPointerException from production runtime to compile time. Null-safe operator toolkit (<code>?.</code>, <code>?:</code>, <code>as?</code>), nullable collections, data classes with immutable <code>copy()</code>, extension functions as anti-corruption layers, and thread-safe <code>object</code> singletons.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/null-safety/">Handbook</a>
+        <span>·</span>
+        <a href="/kotlin-course/slides/null-safety/" target="_blank">Slide deck</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-row">
+    <div class="matrix-col-id">03</div>
+    <div class="matrix-col-content">
+      <h3>Day 3: JVM Interoperability & Coroutines</h3>
+      <p>Two-way polyglot Java ↔ Kotlin interop, <code>@JvmStatic</code>, <code>@JvmOverloads</code>, <code>@JvmField</code>, <code>@Throws</code>, avoiding platform type hazards, coroutines vs OS threads, structured concurrency scopes (<code>coroutineScope</code> vs <code>supervisorScope</code>), dispatchers, and Spring Boot non-blocking aggregation.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/jvm-coroutines/">Handbook</a>
+        <span>·</span>
+        <a href="/kotlin-course/slides/jvm-coroutines/" target="_blank">Slide deck</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+---
+
+## Interactive Learning Tools
+
+Explore the course reference tools designed to accelerate your mastery of backend Kotlin:
+
+- **[Branch Catalog (18 Branches)](/kotlin-course/reference/branches/):** Searchable engineering ledger of all 9 starter and solution branch pairs with 1-click `git switch` checkout commands.
+- **[Kotlin Backend Master Index](/kotlin-course/reference/master-index/):** Searchable matrix covering Null Safety operators, Scope Functions (`let`, `apply`, `run`, `also`, `with`), and `@Jvm*` annotations.
+- **[Coroutines & Concurrency Guide](/kotlin-course/reference/coroutine-wizard/):** Interactive breakdown of Coroutine builders, scopes, dispatchers, cancellation rules, and resilient fallback patterns.
+
+---
+
+## Course Architect & Instructor
+
+<div class="instructor-card">
+  <div class="instructor-card-badge">MH</div>
+  <div class="instructor-card-body">
+    <div class="instructor-card-kicker">COURSE ARCHITECT & LEAD INSTRUCTOR</div>
+    <div class="instructor-card-name">Mohamed Helmy</div>
+    <div class="instructor-card-desc">
+      Enterprise software engineer and technical educator specializing in Clean Architecture, High-Throughput Concurrency, and Modern Backend Engineering in Kotlin & Java.
+    </div>
+    <div class="instructor-card-links">
+      <a href="https://helmy.is-a.dev" target="_blank" rel="noopener noreferrer" class="instructor-pill-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>Website: helmy.is-a.dev</span>
+      </a>
+      <a href="https://github.com/Helmy2" target="_blank" rel="noopener noreferrer" class="instructor-pill-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        <span>GitHub: @Helmy2</span>
+      </a>
+      <a href="https://github.com/Helmy2/kotlin-course" target="_blank" rel="noopener noreferrer" class="instructor-pill-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <span>Source Repository</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>{`
+  .module-matrix {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--arch-border, #1f2a3f);
+    border-radius: 6px;
+    background: var(--arch-surface, #111726);
+    margin: 2rem 0;
+  }
+  .matrix-row {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--arch-border, #1f2a3f);
+  }
+  .matrix-row:last-child {
+    border-bottom: none;
+  }
+  .matrix-col-id {
+    font-family: var(--sl-font-system-mono, monospace);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--arch-cyan, #38bdf8);
+    min-width: 2.5rem;
+  }
+  .matrix-col-content {
+    flex: 1;
+  }
+  .matrix-col-content h3 {
+    margin: 0 0 0.5rem 0 !important;
+    font-size: 1.15rem !important;
+    font-weight: 700;
+    color: var(--arch-ink-primary, #f1f5f9) !important;
+  }
+  .matrix-col-content p {
+    margin: 0 0 0.75rem 0 !important;
+    font-size: 0.95rem;
+    color: var(--arch-ink-secondary, #94a3b8);
+    line-height: 1.6;
+  }
+  .matrix-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--sl-font-system-mono, monospace);
+    font-size: 0.85rem;
+  }
+  .matrix-links a {
+    color: var(--arch-cyan, #38bdf8);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .matrix-links a:hover {
+    text-decoration: underline;
+  }
+  .matrix-links span {
+    color: var(--arch-ink-muted, #64748b);
+  }
+`}</style>

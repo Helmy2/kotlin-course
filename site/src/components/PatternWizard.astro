@@ -1,0 +1,673 @@
+---
+// Coroutines & Concurrency Guide: Architectural Trade-offs
+const patterns = [
+	{
+		id: "launch",
+		conceptId: "08",
+		name: "launch (Fire-and-Forget Job)",
+		category: "Builders",
+		intent: "Launches a new concurrent coroutine without blocking the current thread and returns a reference to the coroutine as a Job.",
+		whenToUse: "When executing background side-effects where the caller does not need a return value (e.g. logging audit events, emitting metrics, triggering asynchronous cache warming).",
+		pros: [
+			"Zero overhead: returns immediately without blocking calling thread.",
+			"Lifecycle bound to parent scope: cancelled automatically if parent job is cancelled.",
+			"Integrates with CoroutineExceptionHandler for global uncaught exception handling."
+		],
+		cons: [
+			"Cannot directly return a result to the caller (use async instead).",
+			"Unhandled exceptions bubble up immediately and cancel the parent coroutine scope by default."
+		],
+		simplerAlternative: "For operations where you need a computed value, use async. For non-coroutine thread pools, use an ExecutorService.",
+		starterBranch: "08-concurrent-kyc-engine-starter",
+		solutionBranch: "08-concurrent-kyc-engine-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#coroutine-builders-launch-vs-async-vs-coroutinescope",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#18"
+	},
+	{
+		id: "async",
+		conceptId: "08",
+		name: "async / await (Deferred Parallelism)",
+		category: "Builders",
+		intent: "Launches a new coroutine concurrently and returns a Deferred<T>, a lightweight non-blocking future holding a eventual result.",
+		whenToUse: "When orchestrating two or more independent remote API calls, DB queries, or heavy calculations in parallel.",
+		pros: [
+			"Decomposes sequential latency into concurrent execution (e.g. 300ms + 400ms takes max(300, 400) = 400ms).",
+			"Type-safe: Deferred<T>.await() unwraps directly to T.",
+			"Structured: child coroutines launched via async are cancelled if the parent fails."
+		],
+		cons: [
+			"Sequential Trap: calling async { ... }.await() immediately in-line serializes execution.",
+			"Exceptions thrown inside async are deferred until await() is called or the parent scope completes."
+		],
+		simplerAlternative: "If you only have one remote call, call the suspending function directly without async.",
+		starterBranch: "08-concurrent-kyc-engine-starter",
+		solutionBranch: "08-concurrent-kyc-engine-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#coroutine-builders-launch-vs-async-vs-coroutinescope",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#19"
+	},
+	{
+		id: "coroutinescope",
+		conceptId: "08",
+		name: "coroutineScope (Fail-Fast Scoping)",
+		category: "Scopes",
+		intent: "Creates a structured coroutine scope and does not complete until all launched children complete; fails fast if any child fails.",
+		whenToUse: "When performing atomic parallel sub-tasks where the entire operation is invalid if any individual piece fails (e.g. atomic transaction validation).",
+		pros: [
+			"Guarantees that no orphan child coroutines leak into the background.",
+			"Fail-fast: if one child throws an exception, cancels all other running siblings immediately.",
+			"Does not block the underlying OS thread while waiting for children."
+		],
+		cons: [
+			"Too strict for resilient microservice aggregation where optional services may fail without aborting the request."
+		],
+		simplerAlternative: "Use supervisorScope if you need partial failure tolerance where some child tasks are non-critical.",
+		starterBranch: "08-concurrent-kyc-engine-starter",
+		solutionBranch: "08-concurrent-kyc-engine-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#what-is-structured-concurrency",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#17"
+	},
+	{
+		id: "supervisorscope",
+		conceptId: "09",
+		name: "supervisorScope (Partial Failure Resilience)",
+		category: "Scopes",
+		intent: "Creates a coroutine scope where a failure of one child does not cascade to cancel other sibling children.",
+		whenToUse: "For microservice checkout or dashboard aggregators where secondary services (loyalty points, recommendations) can fail without aborting the critical transaction.",
+		pros: [
+			"Isolates failure domains: a crash in one task leaves other parallel calls running undisturbed.",
+			"Enables graceful degradation: failed calls can be caught locally and mapped to safe fallback defaults.",
+			"Ensures parent aggregation waits for all children before returning the response."
+		],
+		cons: [
+			"Children must handle their own exceptions (e.g. via runCatching or try/catch), otherwise unhandled exceptions crash the scope."
+		],
+		simplerAlternative: "If failure of any single component must invalidate the entire request, use standard coroutineScope.",
+		starterBranch: "09-coroutine-checkout-aggregator-starter",
+		solutionBranch: "09-coroutine-checkout-aggregator-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#coroutinescope-vs-supervisorscope-handling-partial-failures",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#22"
+	},
+	{
+		id: "withtimeout",
+		conceptId: "08",
+		name: "withTimeout & withTimeoutOrNull (SLA Enforcement)",
+		category: "Resilience",
+		intent: "Enforces a strict maximum execution time on suspending code blocks, cancelling the execution if the duration is exceeded.",
+		whenToUse: "When invoking downstream third-party REST/gRPC endpoints with tight Service Level Agreements (SLAs).",
+		pros: [
+			"Prevents indefinite thread or connection hanging on slow external networks.",
+			"withTimeout throws TimeoutCancellationException allowing explicit fallback logic.",
+			"withTimeoutOrNull returns null cleanly on timeout without throwing an exception."
+		],
+		cons: [
+			"Timeout cancellation is cooperative: if the code inside does not check for cancellation or suspend, timeout cannot stop it.",
+			"Catching generic Exception can accidentally intercept TimeoutCancellationException."
+		],
+		simplerAlternative: "Configure client-level HTTP socket timeouts at the WebClient/HttpClient driver level.",
+		starterBranch: "08-concurrent-kyc-engine-starter",
+		solutionBranch: "08-concurrent-kyc-engine-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#sequential-vs-concurrent-trap",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#20"
+	},
+	{
+		id: "dispatchers-io",
+		conceptId: "07",
+		name: "Dispatchers.IO (Blocking Offload)",
+		category: "Dispatchers",
+		intent: "Routes blocking I/O calls to an elastic thread pool designed to scale up to 64 threads without starving CPU-bound tasks.",
+		whenToUse: "When calling legacy blocking JDBC drivers, reading from local disk, or interacting with legacy Java SDKs.",
+		pros: [
+			"Protects the fixed-size Dispatchers.Default pool from thread starvation.",
+			"Elastic scaling adapts dynamically to bursts of slow blocking socket/disk queries.",
+			"Easy switching via withContext(Dispatchers.IO) { ... }."
+		],
+		cons: [
+			"Cannot eliminate the memory footprint of blocked OS threads (1MB per thread stack).",
+			"Should not be used for non-blocking reactive or coroutine-native drivers (e.g. R2DBC)."
+		],
+		simplerAlternative: "Migrate to true non-blocking drivers (R2DBC, WebClient) that do not block threads.",
+		starterBranch: "07-jvm-polyglot-interop-starter",
+		solutionBranch: "07-jvm-polyglot-interop-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#coroutine-dispatchers-choosing-the-right-thread-pool",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#21"
+	},
+	{
+		id: "dispatchers-default",
+		conceptId: "08",
+		name: "Dispatchers.Default (CPU Computation)",
+		category: "Dispatchers",
+		intent: "A shared pool of worker threads sized strictly to the number of available CPU cores (minimum 2).",
+		whenToUse: "For computationally intensive backend tasks: cryptographic signature verification, massive JSON/Protobuf decoding, image transformation.",
+		pros: [
+			"Optimal CPU cache locality and zero thread thrashing.",
+			"Sized exactly to the hardware capability of the host or container."
+		],
+		cons: [
+			"Any blocking call (e.g. Thread.sleep, JDBC) will starve the entire service from processing other coroutines!"
+		],
+		simplerAlternative: "If performing blocking I/O, switch to Dispatchers.IO.",
+		starterBranch: "08-concurrent-kyc-engine-starter",
+		solutionBranch: "08-concurrent-kyc-engine-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#coroutine-dispatchers-choosing-the-right-thread-pool",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#21"
+	},
+	{
+		id: "spring-suspend-controllers",
+		conceptId: "09",
+		name: "Spring Boot Suspend Controllers",
+		category: "Integration",
+		intent: "Native integration of Kotlin suspending functions directly into Spring MVC and WebFlux @RestController endpoints.",
+		whenToUse: "When building modern high-throughput REST APIs on Spring Boot 3+ without reactive Flux/Mono boilerplate.",
+		pros: [
+			"Imperative, readable sequential code with full non-blocking asynchronous throughput under the hood.",
+			"Spring handles coroutine scope lifecycle, MDC logging context propagation, and error resolution.",
+			"Native compatibility with WebClient awaitBody() and R2DBC awaitSingle()."
+		],
+		cons: [
+			"Requires Spring Boot 3+ and spring-webflux or kotlin-coroutines-reactor on classpath.",
+			"Blocking JPA/JDBC dependencies still require offloading via withContext(Dispatchers.IO)."
+		],
+		simplerAlternative: "Standard Spring MVC thread-per-request if traffic volume is low (<500 RPS).",
+		starterBranch: "09-coroutine-checkout-aggregator-starter",
+		solutionBranch: "09-coroutine-checkout-aggregator-solution",
+		handbookUrl: "/kotlin-course/jvm-coroutines/#writing-suspend-controllers-services-in-spring-boot",
+		slidesUrl: "/kotlin-course/slides/jvm-coroutines/#25"
+	}
+];
+---
+
+<div class="wizard-root not-content">
+	<!-- Control Bar: Category Filters & Search -->
+	<div class="wizard-controls">
+		<div class="search-wrap">
+			<svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="11" cy="11" r="8" />
+				<line x1="21" y1="21" x2="16.65" y2="16.65" />
+			</svg>
+			<input 
+				type="text" 
+				id="wizard-search" 
+				class="wizard-search-input"
+				placeholder="Filter coroutine mechanisms (e.g. 'supervisorScope', 'timeout', 'Dispatchers.IO')..."
+			/>
+			<button id="wizard-clear" class="clear-btn" type="button" style="display: none;">✕</button>
+		</div>
+
+		<div class="filter-row">
+			<div class="category-tabs">
+				<button class="cat-tab active" data-cat="all">All (8)</button>
+				<button class="cat-tab" data-cat="Builders">Builders (2)</button>
+				<button class="cat-tab" data-cat="Scopes">Scopes (2)</button>
+				<button class="cat-tab" data-cat="Dispatchers">Dispatchers (2)</button>
+				<button class="cat-tab" data-cat="Resilience">Resilience (1)</button>
+				<button class="cat-tab" data-cat="Integration">Integration (1)</button>
+			</div>
+			<div class="count-badge" id="wizard-count">Showing 8 of 8</div>
+		</div>
+	</div>
+
+	<!-- Pattern Grid -->
+	<div class="pattern-grid" id="pattern-grid">
+		{patterns.map((p) => (
+			<div 
+				class="pattern-card" 
+				data-category={p.category}
+				data-search={`${p.name} ${p.category} ${p.intent} ${p.whenToUse} ${p.pros.join(' ')} ${p.cons.join(' ')} ${p.simplerAlternative}`.toLowerCase()}
+			>
+				<!-- Card Header -->
+				<div class="card-header">
+					<div class="card-meta">
+						<span class={`cat-pill cat-${p.category.toLowerCase()}`}>{p.category}</span>
+						<span class="concept-id">Concept {p.conceptId}</span>
+					</div>
+					<h3 class="pattern-title">{p.name}</h3>
+					<p class="pattern-intent">{p.intent}</p>
+				</div>
+
+				<!-- When to use -->
+				<div class="section-block when-block">
+					<span class="block-label">When to Use:</span>
+					<p class="block-text">{p.whenToUse}</p>
+				</div>
+
+				<!-- Pros & Cons Grid -->
+				<div class="tradeoff-grid">
+					<!-- Pros -->
+					<div class="tradeoff-col pro-col">
+						<div class="col-head">
+							<span class="dot pro-dot"></span>
+							<span class="col-title">Advantages</span>
+						</div>
+						<ul class="bullet-list">
+							{p.pros.map((pro) => (
+								<li>{pro}</li>
+							))}
+						</ul>
+					</div>
+
+					<!-- Cons -->
+					<div class="tradeoff-col con-col">
+						<div class="col-head">
+							<span class="dot con-dot"></span>
+							<span class="col-title">Caveats & Traps</span>
+						</div>
+						<ul class="bullet-list">
+							{p.cons.map((con) => (
+								<li>{con}</li>
+							))}
+						</ul>
+					</div>
+				</div>
+
+				<!-- Alternative -->
+				<div class="section-block alt-block">
+					<span class="block-label">Simpler Alternative:</span>
+					<p class="block-text">{p.simplerAlternative}</p>
+				</div>
+
+				<!-- Card Footer / Actions -->
+				<div class="card-footer">
+					<div class="footer-links">
+						<a href={p.handbookUrl} class="footer-link">Handbook</a>
+						<span class="link-sep">·</span>
+						<a href={p.slidesUrl} target="_blank" class="footer-link">Slide Deck</a>
+					</div>
+					<div class="footer-actions">
+						<button 
+							type="button" 
+							class="branch-btn starter-btn"
+							data-copy={`git switch ${p.starterBranch}`}
+							title={`Copy git switch ${p.starterBranch}`}
+						>
+							Starter Branch
+						</button>
+						<button 
+							type="button" 
+							class="branch-btn solution-btn"
+							data-copy={`git switch ${p.solutionBranch}`}
+							title={`Copy git switch ${p.solutionBranch}`}
+						>
+							Solution Branch
+						</button>
+					</div>
+				</div>
+			</div>
+		))}
+	</div>
+
+	<!-- Empty State -->
+	<div id="wizard-empty" class="wizard-empty" style="display: none;">
+		<div class="empty-emoji">🔍</div>
+		<h4>No coroutine mechanisms match your query</h4>
+		<p>Try searching for "async", "timeout", "supervisorScope", or "Default".</p>
+	</div>
+</div>
+
+<style>
+	.wizard-root {
+		margin: 1.5rem 0 3rem 0;
+		font-family: var(--sl-font-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+	}
+	.wizard-controls {
+		margin-bottom: 2rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	.search-wrap {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+	.search-icon {
+		position: absolute;
+		left: 0.85rem;
+		color: var(--arch-ink-muted, #64748b);
+		pointer-events: none;
+	}
+	.wizard-search-input {
+		width: 100%;
+		padding: 0.65rem 2.2rem 0.65rem 2.5rem;
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		color: var(--arch-ink-primary, #f1f5f9);
+		font-size: 0.9rem;
+		outline: none;
+		transition: border-color 0.15s ease;
+	}
+	.wizard-search-input:focus {
+		border-color: var(--arch-cyan, #38bdf8);
+	}
+	.clear-btn {
+		position: absolute;
+		right: 0.75rem;
+		background: transparent;
+		border: none;
+		color: var(--arch-ink-muted, #64748b);
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+	.filter-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+	.category-tabs {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+	.cat-tab {
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		color: var(--arch-ink-secondary, #94a3b8);
+		border-radius: 3px;
+		padding: 0.35rem 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+	.cat-tab:hover {
+		color: var(--arch-ink-primary, #f1f5f9);
+		border-color: var(--arch-border-active, #334155);
+	}
+	.cat-tab.active {
+		background: var(--arch-cyan-soft, rgba(56, 189, 248, 0.15));
+		border-color: var(--arch-cyan, #38bdf8);
+		color: var(--arch-cyan, #38bdf8);
+		font-weight: 600;
+	}
+	.count-badge {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.8rem;
+		color: var(--arch-ink-muted, #64748b);
+	}
+	.pattern-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.pattern-card {
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 6px;
+		padding: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	.card-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+	.cat-pill {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.15rem 0.45rem;
+		border-radius: 2px;
+	}
+	.cat-builders {
+		color: var(--arch-cyan, #38bdf8);
+		background: rgba(56, 189, 248, 0.15);
+	}
+	.cat-scopes {
+		color: #a855f7;
+		background: rgba(168, 85, 247, 0.15);
+	}
+	.cat-dispatchers {
+		color: var(--arch-amber, #f59e0b);
+		background: rgba(245, 158, 11, 0.15);
+	}
+	.cat-resilience {
+		color: var(--arch-emerald, #10b981);
+		background: rgba(16, 185, 129, 0.15);
+	}
+	.cat-integration {
+		color: #ec4899;
+		background: rgba(236, 72, 153, 0.15);
+	}
+	.concept-id {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.75rem;
+		color: var(--arch-ink-muted, #64748b);
+	}
+	.pattern-title {
+		margin: 0 0 0.35rem 0 !important;
+		font-size: 1.25rem !important;
+		font-weight: 700;
+		color: var(--arch-ink-primary, #f1f5f9) !important;
+	}
+	.pattern-intent {
+		margin: 0 !important;
+		font-size: 0.92rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+		line-height: 1.5;
+	}
+	.section-block {
+		background: rgba(15, 23, 42, 0.5);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		padding: 0.75rem 1rem;
+	}
+	.block-label {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--arch-cyan, #38bdf8);
+		margin-bottom: 0.25rem;
+	}
+	.block-text {
+		margin: 0 !important;
+		font-size: 0.88rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+		line-height: 1.5;
+	}
+	.tradeoff-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+	.tradeoff-col {
+		background: rgba(15, 23, 42, 0.3);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		padding: 0.85rem;
+	}
+	.col-head {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+	.dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+	}
+	.pro-dot { background: var(--arch-emerald, #10b981); }
+	.con-dot { background: #f87171; }
+	.col-title {
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--arch-ink-primary, #f1f5f9);
+	}
+	.bullet-list {
+		margin: 0 !important;
+		padding-left: 1.25rem !important;
+		font-size: 0.82rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+		line-height: 1.5;
+	}
+	.bullet-list li {
+		margin-bottom: 0.35rem;
+	}
+	.bullet-list li:last-child {
+		margin-bottom: 0;
+	}
+	.alt-block .block-label {
+		color: var(--arch-amber, #f59e0b);
+	}
+	.card-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--arch-border, #1f2a3f);
+	}
+	.footer-links {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+	}
+	.footer-link {
+		color: var(--arch-cyan, #38bdf8);
+		text-decoration: none;
+		font-weight: 500;
+	}
+	.footer-link:hover {
+		text-decoration: underline;
+	}
+	.link-sep {
+		color: var(--arch-ink-muted, #64748b);
+	}
+	.footer-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.branch-btn {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.75rem;
+		padding: 0.3rem 0.65rem;
+		border-radius: 3px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+	.starter-btn {
+		background: rgba(56, 189, 248, 0.1);
+		border: 1px solid rgba(56, 189, 248, 0.25);
+		color: var(--arch-cyan, #38bdf8);
+	}
+	.starter-btn:hover {
+		background: rgba(56, 189, 248, 0.2);
+	}
+	.solution-btn {
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.25);
+		color: var(--arch-emerald, #10b981);
+	}
+	.solution-btn:hover {
+		background: rgba(16, 185, 129, 0.2);
+	}
+	.wizard-empty {
+		text-align: center;
+		padding: 3rem;
+	}
+	.empty-emoji {
+		font-size: 2rem;
+		margin-bottom: 0.5rem;
+	}
+	@media (max-width: 768px) {
+		.tradeoff-grid {
+			grid-template-columns: 1fr;
+		}
+		.card-footer {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>
+
+<script is:inline>
+	document.addEventListener('DOMContentLoaded', () => {
+		const searchInput = document.getElementById('wizard-search');
+		const clearBtn = document.getElementById('wizard-clear');
+		const catTabs = document.querySelectorAll('.cat-tab');
+		const cards = document.querySelectorAll('.pattern-card');
+		const countBadge = document.getElementById('wizard-count');
+		const emptyView = document.getElementById('wizard-empty');
+
+		let activeCat = 'all';
+
+		function filterCards() {
+			const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+			let count = 0;
+
+			if (clearBtn) {
+				clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+			}
+
+			cards.forEach((card) => {
+				const cat = card.getAttribute('data-category');
+				const text = card.getAttribute('data-search') || '';
+
+				const matchesCat = activeCat === 'all' || cat === activeCat;
+				const matchesQuery = !query || text.includes(query);
+
+				if (matchesCat && matchesQuery) {
+					card.style.display = 'flex';
+					count++;
+				} else {
+					card.style.display = 'none';
+				}
+			});
+
+			if (countBadge) {
+				countBadge.textContent = `Showing ${count} of ${cards.length}`;
+			}
+
+			if (emptyView) {
+				emptyView.style.display = count === 0 ? 'block' : 'none';
+			}
+		}
+
+		if (searchInput) {
+			searchInput.addEventListener('input', filterCards);
+		}
+
+		if (clearBtn) {
+			clearBtn.addEventListener('click', () => {
+				searchInput.value = '';
+				filterCards();
+				searchInput.focus();
+			});
+		}
+
+		catTabs.forEach((tab) => {
+			tab.addEventListener('click', () => {
+				catTabs.forEach((t) => t.classList.remove('active'));
+				tab.classList.add('active');
+				activeCat = tab.getAttribute('data-cat') || 'all';
+				filterCards();
+			});
+		});
+
+		document.querySelectorAll('.branch-btn').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const cmd = btn.getAttribute('data-copy');
+				if (cmd) {
+					navigator.clipboard.writeText(cmd);
+					const orig = btn.textContent;
+					btn.textContent = 'Copied';
+					setTimeout(() => {
+						btn.textContent = orig;
+					}, 1400);
+				}
+			});
+		});
+	});
+</script>

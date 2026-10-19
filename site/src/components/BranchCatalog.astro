@@ -1,0 +1,418 @@
+---
+const modules = [
+	{
+		module: "Day 1: Core Kotlin Concepts & Java Migration",
+		concepts: [
+			{
+				id: "01",
+				title: "Backend Rate-Limiter & Fee Engine",
+				starter: "01-rate-limiter-fee-engine-starter",
+				solution: "01-rate-limiter-fee-engine-solution",
+				focus: "Expressions over statements, pattern matching with when, default arguments, named parameters, range loops, and exponential backoff.",
+				tests: "PricingEngineTest",
+			},
+			{
+				id: "02",
+				title: "Migrating Legacy Java Domain",
+				starter: "02-java-subscription-migration-starter",
+				solution: "02-java-subscription-migration-solution",
+				focus: "Strangler fig migration, refactoring 55-line JavaBeans into <25 lines of idiomatic Kotlin, primary constructors, init invariant validation.",
+				tests: "SubscriptionMigrationTest",
+			},
+			{
+				id: "03",
+				title: "In-Memory Wallet Ledger Engine",
+				starter: "03-wallet-ledger-engine-starter",
+				solution: "03-wallet-ledger-engine-solution",
+				focus: "Class encapsulation with private set, backing properties (_history vs history), custom getters, interface implementation, state safety.",
+				tests: "WalletLedgerTest",
+			}
+		]
+	},
+	{
+		module: "Day 2: Null Safety & Advanced Features",
+		concepts: [
+			{
+				id: "04",
+				title: "Sanitizing Unreliable Webhook Payloads",
+				starter: "04-null-safe-webhook-processor-starter",
+				solution: "04-null-safe-webhook-processor-solution",
+				focus: "Compile-time null safety, guard clauses with Elvis (?:), safe calls (?.), mapNotNull, orEmpty(), defensive data pipelines.",
+				tests: "WebhookProcessorTest",
+			},
+			{
+				id: "05",
+				title: "Rich Domain Modeling with Data Classes",
+				starter: "05-rich-domain-modeling-starter",
+				solution: "05-rich-domain-modeling-solution",
+				focus: "First-class value objects, data class copy() semantics, private primary constructor, companion object factories (Money.of, Money.zero).",
+				tests: "RichDomainModelTest",
+			},
+			{
+				id: "06",
+				title: "Null-Safe DTO-to-Domain Extension Mapping",
+				starter: "06-dto-extension-mapping-starter",
+				solution: "06-dto-extension-mapping-solution",
+				focus: "Extension functions/properties as anti-corruption layers, handling nullable receivers, sanitizing nested collections, Kotlin Result<T>.",
+				tests: "OrderMappingExtensionsTest",
+			}
+		]
+	},
+	{
+		module: "Day 3: JVM Interoperability & Coroutines",
+		concepts: [
+			{
+				id: "07",
+				title: "Two-Way Java ↔ Kotlin Interop",
+				starter: "07-jvm-polyglot-interop-starter",
+				solution: "07-jvm-polyglot-interop-solution",
+				focus: "@JvmStatic, @JvmOverloads for method telescoping in Java, @JvmField, @Throws for checked exceptions, safe platform type handling.",
+				tests: "PolyglotAuditTest",
+			},
+			{
+				id: "08",
+				title: "Structured Concurrency & KYC Timeouts",
+				starter: "08-concurrent-kyc-engine-starter",
+				solution: "08-concurrent-kyc-engine-solution",
+				focus: "Suspending functions, concurrent decomposition with async/await, coroutineScope, sequential vs concurrent benchmarks, withTimeout.",
+				tests: "KycVerificationServiceTest",
+			},
+			{
+				id: "09",
+				title: "Resilient Microservice Checkout Aggregator",
+				starter: "09-coroutine-checkout-aggregator-starter",
+				solution: "09-coroutine-checkout-aggregator-solution",
+				focus: "Capstone structured concurrency, supervisorScope for partial failure resilience, graceful degradation with fallbacks, Spring Boot readiness.",
+				tests: "OrderSummaryAggregatorTest",
+			}
+		]
+	}
+];
+
+const totalConcepts = modules.reduce((acc, m) => acc + m.concepts.length, 0);
+const totalBranches = totalConcepts * 2;
+---
+
+<div class="branch-catalog-root">
+	<div class="catalog-summary-bar">
+		<div class="summary-pill">
+			<span class="pill-number">{totalConcepts}</span>
+			<span class="pill-label">Hands-on Concepts</span>
+		</div>
+		<div class="summary-pill">
+			<span class="pill-number">{totalBranches}</span>
+			<span class="pill-label">Total Branches</span>
+		</div>
+		<div class="summary-pill highlight">
+			<span class="pill-number">100%</span>
+			<span class="pill-label">Test-Driven</span>
+		</div>
+	</div>
+
+	<div class="catalog-search-wrap">
+		<input
+			type="text"
+			id="branch-search"
+			class="catalog-search-input"
+			placeholder="Filter by concept, branch name, or test suite..."
+			autocomplete="off"
+		/>
+	</div>
+
+	{modules.map((m) => (
+		<div class="module-group">
+			<div class="module-group-header">
+				<span class="module-dot"></span>
+				<h3 class="module-group-title">{m.module}</h3>
+			</div>
+
+			<div class="ledger-table">
+				{m.concepts.map((c) => (
+					<div
+						class="ledger-row"
+						data-search={`${c.id} ${c.title} ${c.starter} ${c.solution} ${c.focus} ${c.tests}`.toLowerCase()}
+					>
+						<div class="ledger-col-id">
+							<span class="id-badge">{c.id}</span>
+						</div>
+
+						<div class="ledger-col-main">
+							<div class="concept-title">{c.title}</div>
+							<div class="concept-focus">{c.focus}</div>
+							<div class="concept-tests">
+								<span class="tests-label">Test Suite:</span>
+								<code>{c.tests}</code>
+							</div>
+						</div>
+
+						<div class="ledger-col-branches">
+							<div class="branch-entry starter">
+								<span class="branch-tag tag-starter">Starter</span>
+								<code class="branch-name">{c.starter}</code>
+								<button
+									type="button"
+									class="action-btn"
+									data-copy={`git switch ${c.starter}`}
+									title={`Copy "git switch ${c.starter}"`}
+								>
+									Copy
+								</button>
+							</div>
+
+							<div class="branch-entry solution">
+								<span class="branch-tag tag-solution">Solution</span>
+								<code class="branch-name">{c.solution}</code>
+								<button
+									type="button"
+									class="action-btn"
+									data-copy={`git switch ${c.solution}`}
+									title={`Copy "git switch ${c.solution}"`}
+								>
+									Copy
+								</button>
+							</div>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	))}
+</div>
+
+<style>
+	.branch-catalog-root {
+		margin: 1.5rem 0 3rem 0;
+		font-family: var(--sl-font-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+	}
+	.catalog-summary-bar {
+		display: flex;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
+	}
+	.summary-pill {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		padding: 0.5rem 1rem;
+	}
+	.summary-pill.highlight {
+		border-color: var(--arch-emerald, #10b981);
+	}
+	.summary-pill.highlight .pill-number {
+		color: var(--arch-emerald, #10b981);
+	}
+	.pill-number {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--arch-cyan, #38bdf8);
+	}
+	.pill-label {
+		font-size: 0.85rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.catalog-search-wrap {
+		margin-bottom: 2rem;
+	}
+	.catalog-search-input {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		color: var(--arch-ink-primary, #f1f5f9);
+		font-size: 0.95rem;
+		outline: none;
+		transition: border-color 0.2s ease;
+	}
+	.catalog-search-input:focus {
+		border-color: var(--arch-cyan, #38bdf8);
+	}
+	.module-group {
+		margin-bottom: 2.5rem;
+	}
+	.module-group-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--arch-border, #1f2a3f);
+	}
+	.module-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--arch-cyan, #38bdf8);
+	}
+	.module-group-title {
+		margin: 0 !important;
+		font-size: 1.1rem !important;
+		font-weight: 700;
+		color: var(--arch-ink-primary, #f1f5f9) !important;
+	}
+	.ledger-table {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		background: var(--arch-surface, #111726);
+		overflow: hidden;
+	}
+	.ledger-row {
+		display: grid;
+		grid-template-columns: 3.5rem 1fr 340px;
+		gap: 1.25rem;
+		padding: 1.25rem;
+		border-bottom: 1px solid var(--arch-border, #1f2a3f);
+		align-items: center;
+	}
+	.ledger-row:last-child {
+		border-bottom: none;
+	}
+	.id-badge {
+		display: inline-block;
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--arch-cyan, #38bdf8);
+		background: rgba(56, 189, 248, 0.1);
+		border: 1px solid rgba(56, 189, 248, 0.25);
+		border-radius: 3px;
+		padding: 0.25rem 0.5rem;
+		text-align: center;
+	}
+	.concept-title {
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: var(--arch-ink-primary, #f1f5f9);
+		margin-bottom: 0.35rem;
+	}
+	.concept-focus {
+		font-size: 0.88rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+		line-height: 1.5;
+		margin-bottom: 0.5rem;
+	}
+	.concept-tests {
+		font-size: 0.82rem;
+		color: var(--arch-ink-muted, #64748b);
+	}
+	.tests-label {
+		margin-right: 0.35rem;
+	}
+	.concept-tests code {
+		color: var(--arch-amber, #f59e0b) !important;
+		background: rgba(245, 158, 11, 0.1) !important;
+		padding: 0.1rem 0.35rem;
+		border-radius: 2px;
+	}
+	.ledger-col-branches {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.branch-entry {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(15, 23, 42, 0.6);
+		padding: 0.35rem 0.5rem;
+		border-radius: 3px;
+		border: 1px solid var(--arch-border, #1f2a3f);
+	}
+	.branch-tag {
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.1rem 0.35rem;
+		border-radius: 2px;
+	}
+	.tag-starter {
+		color: var(--arch-cyan, #38bdf8);
+		background: rgba(56, 189, 248, 0.15);
+	}
+	.tag-solution {
+		color: var(--arch-emerald, #10b981);
+		background: rgba(16, 185, 129, 0.15);
+	}
+	.branch-name {
+		font-size: 0.78rem !important;
+		color: var(--arch-ink-primary, #f1f5f9) !important;
+		background: transparent !important;
+		padding: 0 !important;
+		flex: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.action-btn {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.75rem;
+		color: var(--arch-cyan, #38bdf8);
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 3px;
+		padding: 0.2rem 0.5rem;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: all 0.15s ease;
+	}
+	.action-btn:hover {
+		background: var(--arch-border, #1f2a3f);
+		color: var(--arch-ink-primary, #f1f5f9);
+	}
+
+	@media (max-width: 768px) {
+		.ledger-row {
+			grid-template-columns: 1fr;
+			gap: 1rem;
+		}
+	}
+</style>
+
+<script is:inline>
+	document.addEventListener('DOMContentLoaded', () => {
+		const search = document.getElementById('branch-search');
+		const rows = document.querySelectorAll('.ledger-row');
+
+		if (search) {
+			search.addEventListener('input', (e) => {
+				const query = e.target.value.toLowerCase().trim();
+				rows.forEach((row) => {
+					const text = row.getAttribute('data-search') || '';
+					if (!query || text.includes(query)) {
+						row.style.display = 'grid';
+					} else {
+						row.style.display = 'none';
+					}
+				});
+			});
+		}
+
+		document.querySelectorAll('.action-btn').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const cmd = btn.getAttribute('data-copy');
+				if (cmd) {
+					navigator.clipboard.writeText(cmd);
+					const orig = btn.textContent;
+					btn.textContent = 'Copied';
+					btn.style.borderColor = 'var(--arch-emerald, #10b981)';
+					btn.style.color = 'var(--arch-emerald, #10b981)';
+					setTimeout(() => {
+						btn.textContent = orig;
+						btn.style.borderColor = '';
+						btn.style.color = '';
+					}, 1400);
+				}
+			});
+		});
+	});
+</script>

@@ -1,0 +1,566 @@
+---
+const principles = [
+	{
+		type: "Null-Safety",
+		name: "Compile-Time Non-Nullability",
+		meaning: "Nullability is explicitly tracked in the type system (T vs T?) at compile time.",
+		smell: "Pervasive NullPointerException in production when external APIs or DB queries return unexpected nulls.",
+		patterns: ["Safe Calls (?.)", "Elvis Operator (?:)", "Preconditions"],
+		solutionNote: "Eliminates defensive null checking boilerplate; compiler guarantees non-null types cannot hold null."
+	},
+	{
+		type: "Null-Safety",
+		name: "Distinguish Missing Items from Missing Containers",
+		meaning: "A null container (List<T>?) has completely different semantic meaning from a list with null elements (List<T?>).",
+		smell: "NullPointerExceptions when iterating collections or returning null instead of empty collections.",
+		patterns: ["orEmpty()", "mapNotNull", "filterNotNull"],
+		solutionNote: "Pipelines like raw.orEmpty().mapNotNull { it.toValid() } safely sanitize data with zero NPE risk."
+	},
+	{
+		type: "Null-Safety",
+		name: "Avoid Not-Null Assertion (!!)",
+		meaning: "Forcing a nullable reference to non-null via !! bypasses compile-time safety and risks instant crash.",
+		smell: "Scattering !! across production code to quiet compiler warnings instead of handling missing data.",
+		patterns: ["Elvis with throw", "requireNotNull", "Smart Casts"],
+		solutionNote: "Use requireNotNull(order) { 'Missing order' } or ?: throw IllegalArgumentException() for fail-fast safety."
+	},
+	{
+		type: "Null-Safety",
+		name: "Platform Types Danger Zone",
+		meaning: "Types returned from unannotated Java code appear as T! where compiler disables null checks.",
+		smell: "Silently trusting Java method return values without inspection, causing delayed NPEs deep in business logic.",
+		patterns: ["Explicit Type Annotations", "JSpecify", "Defensive Mapping"],
+		solutionNote: "Explicitly declare the variable type as nullable (val email: String? = javaUser.getEmail()) to restore safety."
+	},
+	{
+		type: "Idioms",
+		name: "Expressions Over Statements",
+		meaning: "Control flow constructs like if and when evaluate to values rather than executing side-effects.",
+		smell: "Declaring mutable var with null and setting it inside multiple if/else branches.",
+		patterns: ["when Expressions", "Single-Expression Functions", "Smart Casts"],
+		solutionNote: "Assigning val result = when (state) { ... } guarantees exhaustiveness and enforces immutability."
+	},
+	{
+		type: "Idioms",
+		name: "Data Classes vs JPA Entities",
+		meaning: "Data classes generate structural equals(), hashCode(), and copy(); ideal for Value Objects and DTOs.",
+		smell: "Annotating a data class with @Entity, causing LazyInitializationException and breaking proxy identity.",
+		patterns: ["Normal Class for Entities", "Data Class for DTOs/Events", "copy() State Transitions"],
+		solutionNote: "Reserve data class for immutable domain events and DTOs; use regular classes with ID equality for Hibernate."
+	},
+	{
+		type: "Idioms",
+		name: "Default & Named Parameters",
+		meaning: "Default arguments eliminate telescoping method and constructor overloads completely.",
+		smell: "Writing 5 overloaded constructors in Java (this(id, null, 0, false)) just to provide optional fields.",
+		patterns: ["Default Parameters", "Named Arguments", "Trailing Lambdas"],
+		solutionNote: "Declare default values in primary constructor; callers use named parameters for crystal clarity."
+	},
+	{
+		type: "Idioms",
+		name: "Immutability & Backing Properties",
+		meaning: "Public APIs should expose read-only types while internal mutation is strictly encapsulated.",
+		smell: "Exposing MutableList directly from a service or entity, allowing external callers to corrupt state.",
+		patterns: ["val history: List<T> get() = _history", "private set", "Defensive toList()"],
+		solutionNote: "Declare private val _history = mutableListOf<T>() and expose val history: List<T> get() = _history.toList()."
+	},
+	{
+		type: "Idioms",
+		name: "Extension Functions as Anti-Corruption Layers",
+		meaning: "Extend third-party or DTO models with domain mapping methods without polluting them with business logic.",
+		smell: "Bloated static UserMapper classes with 20 static methods or complex reflection-heavy mappers.",
+		patterns: ["fun RawPayload?.toDomain()", "Result<T> Return Type", "Receiver Scoping"],
+		solutionNote: "Extension functions with nullable receivers provide clean dot-syntax (payload.toDomain()) with zero overhead."
+	},
+	{
+		type: "JVM-Interop",
+		name: "@JvmStatic in Singletons & Companions",
+		meaning: "Instructs the Kotlin compiler to emit true static methods on the enclosing JVM class.",
+		smell: "Java callers forced to write MyClass.Companion.factoryMethod() or MyService.INSTANCE.process().",
+		patterns: ["@JvmStatic", "Static Factories", "Enum Equivalents"],
+		solutionNote: "Allows Java code to invoke MyClass.factoryMethod() naturally just like standard static Java methods."
+	},
+	{
+		type: "JVM-Interop",
+		name: "@JvmOverloads for Telescoping Java Callers",
+		meaning: "Generates multiple overloaded method signatures in bytecode for each default parameter.",
+		smell: "Java callers unable to use default parameters, forced to supply every single argument manually.",
+		patterns: ["@JvmOverloads", "Constructors", "Service Facades"],
+		solutionNote: "Generates N overloaded methods in bytecode so Java callers can omit arguments with defaults."
+	},
+	{
+		type: "JVM-Interop",
+		name: "@JvmField for Direct Field Access",
+		meaning: "Instructs compiler to generate a public field without getter/setter indirection.",
+		smell: "Frameworks or serialization libraries requiring direct public field access failing with getters.",
+		patterns: ["Constants", "JUnit Rules", "Performance Critical Data"],
+		solutionNote: "Exposes raw public fields in bytecode for framework compatibility."
+	},
+	{
+		type: "JVM-Interop",
+		name: "@Throws for Checked Exception Contracts",
+		meaning: "Emits a throws clause in the generated JVM method signature so Java callers can catch checked exceptions.",
+		smell: "Java compiler rejecting try/catch for IOException when calling a Kotlin method that throws it.",
+		patterns: ["@Throws(IOException::class)", "File I/O", "Network Clients"],
+		solutionNote: "Enables seamless checked exception handling when Kotlin code is invoked from Java."
+	},
+	{
+		type: "Concurrency",
+		name: "Structured Concurrency",
+		meaning: "Coroutines are launched in explicit scopes that guarantee child jobs finish before the parent finishes.",
+		smell: "GlobalScope or unmanaged thread creation causing memory leaks, thread starvation, and orphan tasks.",
+		patterns: ["coroutineScope", "supervisorScope", "Job Hierarchy"],
+		solutionNote: "Prevents leaked background jobs; canceling a parent scope cancels all child coroutines automatically."
+	},
+	{
+		type: "Concurrency",
+		name: "Partial Failure Isolation",
+		meaning: "In microservice aggregation, failures in non-critical tasks must not cancel sibling tasks.",
+		smell: "coroutineScope failing entirely because a non-essential recommendations service timed out.",
+		patterns: ["supervisorScope", "runCatching", "Fallback Defaults"],
+		solutionNote: "Wrap independent calls in supervisorScope with try/catch to degrade gracefully without cancelling checkout."
+	},
+	{
+		type: "Concurrency",
+		name: "Dispatcher Discipline & Cancellation",
+		meaning: "Route CPU-bound tasks to Dispatchers.Default and blocking I/O to Dispatchers.IO; never swallow CancellationException.",
+		smell: "Running blocking JDBC queries on Default pool or catching generic Exception without rethrowing CancellationException.",
+		patterns: ["Dispatchers.IO", "Dispatchers.Default", "Rethrow CancellationException"],
+		solutionNote: "Ensures thread pools stay healthy and cooperative cancellation signals are honored by the runtime."
+	}
+];
+---
+
+<div class="matrix-wrapper not-content">
+	<!-- Top Filter & Search Controls -->
+	<div class="matrix-controls-bar">
+		<div class="search-input-wrapper">
+			<svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+				<circle cx="11" cy="11" r="8" />
+				<line x1="21" y1="21" x2="16.65" y2="16.65" />
+			</svg>
+			<input 
+				type="text" 
+				id="matrix-search" 
+				placeholder="Filter by rule, smell (e.g. 'Platform Types'), or pattern (e.g. 'supervisorScope')..." 
+				class="matrix-search-box"
+			/>
+			<button id="matrix-clear-search" class="clear-search-btn" type="button" title="Clear filter" style="display: none;">✕</button>
+		</div>
+
+		<div class="filter-and-stats">
+			<div class="filter-group">
+				<button class="filter-tab active" data-type="all">All (16)</button>
+				<button class="filter-tab" data-type="Null-Safety">Null-Safety (4)</button>
+				<button class="filter-tab" data-type="Idioms">Idioms (5)</button>
+				<button class="filter-tab" data-type="JVM-Interop">JVM-Interop (4)</button>
+				<button class="filter-tab" data-type="Concurrency">Concurrency (3)</button>
+			</div>
+			<div class="results-counter" id="matrix-counter">Showing 16 of 16</div>
+		</div>
+	</div>
+
+	<!-- Scroll / Full Width Hint -->
+	<div class="matrix-hint-banner">
+		<span class="hint-icon">💡</span>
+		<span class="hint-text">
+			<strong>Tip:</strong> Click <strong>Focus Mode</strong> (⛶) in the top navigation bar to expand this reference matrix across the full screen.
+		</span>
+	</div>
+
+	<!-- Table Scroll Frame -->
+	<div class="table-frame">
+		<table class="arch-table">
+			<colgroup>
+				<col class="col-principle-width" style="width: 24%;" />
+				<col class="col-intent-width" style="width: 25%;" />
+				<col class="col-smell-width" style="width: 26%;" />
+				<col class="col-solution-width" style="width: 25%;" />
+			</colgroup>
+			<thead>
+				<tr>
+					<th>Core Idiom / Principle</th>
+					<th>Architectural Intent</th>
+					<th>Common Smell / Anti-Pattern</th>
+					<th>Idiomatic Resolution</th>
+				</tr>
+			</thead>
+			<tbody id="matrix-body">
+				{principles.map((p) => (
+					<tr 
+						data-category={p.type} 
+						data-search={`${p.name} ${p.meaning} ${p.smell} ${p.patterns.join(' ')} ${p.solutionNote}`.toLowerCase()}
+					>
+						<!-- Column 1: Principle -->
+						<td class="col-principle">
+							<span class={`type-badge ${p.type.toLowerCase()}-badge`}>{p.type}</span>
+							<strong class="principle-name">{p.name}</strong>
+						</td>
+
+						<!-- Column 2: Intent -->
+						<td class="col-intent">
+							<p class="intent-text">{p.meaning}</p>
+						</td>
+
+						<!-- Column 3: Smell -->
+						<td class="col-smell">
+							<div class="smell-card">
+								<div class="smell-badge">
+									<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+										<line x1="12" y1="9" x2="12" y2="13" />
+										<line x1="12" y1="17" x2="12.01" y2="17" />
+									</svg>
+									<span>Symptom</span>
+								</div>
+								<p class="smell-desc">{p.smell}</p>
+							</div>
+						</td>
+
+						<!-- Column 4: Pattern Resolution -->
+						<td class="col-solution">
+							<div class="solution-card">
+								<div class="pattern-chips">
+									{p.patterns.map((pat) => (
+										<span class="pattern-chip">{pat}</span>
+									))}
+								</div>
+								<p class="solution-note">{p.solutionNote}</p>
+							</div>
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+
+		<!-- Empty State View -->
+		<div id="matrix-empty-state" class="empty-state-view" style="display: none;">
+			<div class="empty-icon">🔍</div>
+			<h4>No matches found</h4>
+			<p>Try searching for terms like "Elvis", "Platform Types", "JvmStatic", or "supervisorScope".</p>
+			<button id="empty-reset-btn" class="empty-reset-btn" type="button">Reset Filters</button>
+		</div>
+	</div>
+</div>
+
+<style>
+	.matrix-wrapper {
+		margin: 1.5rem 0 3rem 0;
+		font-family: var(--sl-font-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+	}
+	.matrix-controls-bar {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+	.search-input-wrapper {
+		position: relative;
+		display: flex;
+		align-items: center;
+		width: 100%;
+	}
+	.search-icon {
+		position: absolute;
+		left: 0.85rem;
+		color: var(--arch-ink-muted, #64748b);
+		pointer-events: none;
+	}
+	.matrix-search-box {
+		width: 100%;
+		padding: 0.65rem 2.2rem 0.65rem 2.5rem;
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		color: var(--arch-ink-primary, #f1f5f9);
+		font-size: 0.9rem;
+		outline: none;
+		transition: border-color 0.15s ease;
+	}
+	.matrix-search-box:focus {
+		border-color: var(--arch-cyan, #38bdf8);
+	}
+	.clear-search-btn {
+		position: absolute;
+		right: 0.75rem;
+		background: transparent;
+		border: none;
+		color: var(--arch-ink-muted, #64748b);
+		cursor: pointer;
+		font-size: 0.85rem;
+		padding: 0.2rem 0.4rem;
+	}
+	.filter-and-stats {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+	.filter-group {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+	.filter-tab {
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		color: var(--arch-ink-secondary, #94a3b8);
+		border-radius: 3px;
+		padding: 0.35rem 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+	.filter-tab:hover {
+		color: var(--arch-ink-primary, #f1f5f9);
+		border-color: var(--arch-border-active, #334155);
+	}
+	.filter-tab.active {
+		background: var(--arch-cyan-soft, rgba(56, 189, 248, 0.15));
+		border-color: var(--arch-cyan, #38bdf8);
+		color: var(--arch-cyan, #38bdf8);
+		font-weight: 600;
+	}
+	.results-counter {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.8rem;
+		color: var(--arch-ink-muted, #64748b);
+	}
+	.matrix-hint-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(56, 189, 248, 0.05);
+		border: 1px dashed rgba(56, 189, 248, 0.25);
+		border-radius: 4px;
+		padding: 0.5rem 0.85rem;
+		margin-bottom: 1rem;
+		font-size: 0.82rem;
+		color: var(--arch-ink-secondary, #94a3b8);
+	}
+	.hint-icon {
+		font-size: 0.95rem;
+	}
+	.table-frame {
+		position: relative;
+		border: 1px solid var(--arch-border, #1f2a3f);
+		border-radius: 4px;
+		background: var(--arch-surface, #111726);
+		overflow-x: auto;
+	}
+	.arch-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.88rem;
+		text-align: left;
+	}
+	.arch-table th {
+		background: var(--arch-bg-card, #0f172a);
+		padding: 0.75rem 1rem;
+		font-weight: 600;
+		color: var(--arch-ink-secondary, #94a3b8);
+		border-bottom: 1px solid var(--arch-border, #1f2a3f);
+		text-transform: uppercase;
+		font-size: 0.75rem;
+		letter-spacing: 0.05em;
+	}
+	.arch-table td {
+		padding: 1rem;
+		vertical-align: top;
+		border-bottom: 1px solid var(--arch-border, #1f2a3f);
+		line-height: 1.5;
+	}
+	.arch-table tr:last-child td {
+		border-bottom: none;
+	}
+	.col-principle {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+	.type-badge {
+		align-self: flex-start;
+		font-size: 0.68rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.15rem 0.45rem;
+		border-radius: 2px;
+	}
+	.null-safety-badge {
+		color: var(--arch-cyan, #38bdf8);
+		background: rgba(56, 189, 248, 0.15);
+	}
+	.idioms-badge {
+		color: var(--arch-emerald, #10b981);
+		background: rgba(16, 185, 129, 0.15);
+	}
+	.jvm-interop-badge {
+		color: var(--arch-amber, #f59e0b);
+		background: rgba(245, 158, 11, 0.15);
+	}
+	.concurrency-badge {
+		color: #a855f7;
+		background: rgba(168, 85, 247, 0.15);
+	}
+	.principle-name {
+		color: var(--arch-ink-primary, #f1f5f9);
+		font-size: 0.95rem;
+	}
+	.intent-text {
+		margin: 0;
+		color: var(--arch-ink-secondary, #94a3b8);
+	}
+	.smell-card {
+		background: rgba(239, 68, 68, 0.05);
+		border: 1px solid rgba(239, 68, 68, 0.15);
+		border-radius: 3px;
+		padding: 0.5rem 0.75rem;
+	}
+	.smell-badge {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		color: #f87171;
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		margin-bottom: 0.35rem;
+	}
+	.smell-desc {
+		margin: 0;
+		color: var(--arch-ink-secondary, #94a3b8);
+		font-size: 0.82rem;
+	}
+	.solution-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.pattern-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+	.pattern-chip {
+		font-family: var(--sl-font-system-mono, monospace);
+		font-size: 0.75rem;
+		color: var(--arch-cyan, #38bdf8);
+		background: rgba(56, 189, 248, 0.1);
+		border: 1px solid rgba(56, 189, 248, 0.25);
+		border-radius: 2px;
+		padding: 0.15rem 0.4rem;
+	}
+	.solution-note {
+		margin: 0;
+		color: var(--arch-ink-muted, #64748b);
+		font-size: 0.82rem;
+	}
+	.empty-state-view {
+		text-align: center;
+		padding: 3rem 1.5rem;
+	}
+	.empty-icon {
+		font-size: 2rem;
+		margin-bottom: 0.5rem;
+	}
+	.empty-state-view h4 {
+		margin: 0 0 0.5rem 0;
+		color: var(--arch-ink-primary, #f1f5f9);
+	}
+	.empty-state-view p {
+		margin: 0 0 1rem 0;
+		color: var(--arch-ink-secondary, #94a3b8);
+		font-size: 0.88rem;
+	}
+	.empty-reset-btn {
+		background: var(--arch-surface, #111726);
+		border: 1px solid var(--arch-border, #1f2a3f);
+		color: var(--arch-cyan, #38bdf8);
+		border-radius: 3px;
+		padding: 0.4rem 0.85rem;
+		font-size: 0.85rem;
+		cursor: pointer;
+	}
+</style>
+
+<script is:inline>
+	document.addEventListener('DOMContentLoaded', () => {
+		const searchInput = document.getElementById('matrix-search');
+		const clearBtn = document.getElementById('matrix-clear-search');
+		const filterTabs = document.querySelectorAll('.filter-tab');
+		const rows = document.querySelectorAll('#matrix-body tr');
+		const counter = document.getElementById('matrix-counter');
+		const emptyState = document.getElementById('matrix-empty-state');
+		const resetBtn = document.getElementById('empty-reset-btn');
+
+		let activeFilter = 'all';
+
+		function applyFilters() {
+			const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+			let visibleCount = 0;
+
+			if (clearBtn) {
+				clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+			}
+
+			rows.forEach((row) => {
+				const category = row.getAttribute('data-category');
+				const text = row.getAttribute('data-search') || '';
+
+				const matchesCategory = activeFilter === 'all' || category === activeFilter;
+				const matchesSearch = !query || text.includes(query);
+
+				if (matchesCategory && matchesSearch) {
+					row.style.display = '';
+					visibleCount++;
+				} else {
+					row.style.display = 'none';
+				}
+			});
+
+			if (counter) {
+				counter.textContent = `Showing ${visibleCount} of ${rows.length}`;
+			}
+
+			if (emptyState) {
+				emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+			}
+		}
+
+		if (searchInput) {
+			searchInput.addEventListener('input', applyFilters);
+		}
+
+		if (clearBtn) {
+			clearBtn.addEventListener('click', () => {
+				searchInput.value = '';
+				applyFilters();
+				searchInput.focus();
+			});
+		}
+
+		filterTabs.forEach((tab) => {
+			tab.addEventListener('click', () => {
+				filterTabs.forEach((t) => t.classList.remove('active'));
+				tab.classList.add('active');
+				activeFilter = tab.getAttribute('data-type') || 'all';
+				applyFilters();
+			});
+		});
+
+		if (resetBtn) {
+			resetBtn.addEventListener('click', () => {
+				if (searchInput) searchInput.value = '';
+				activeFilter = 'all';
+				filterTabs.forEach((t) => {
+					if (t.getAttribute('data-type') === 'all') t.classList.add('active');
+					else t.classList.remove('active');
+				});
+				applyFilters();
+			});
+		}
+	});
+</script>
