@@ -3,35 +3,47 @@ package com.course.core.pricing
 object PricingEngine {
 
     /**
-     * Calculates the transaction processing fee.
-     *
-     * TODO: Task 1 - Refactor this placeholder into an idiomatic when/if expression
-     * - VIP: 0% fee + (5.0 if cross-border else 0.0)
-     * - GOLD: 1% fee + (15.0 if cross-border else 0.0)
-     * - STANDARD: 2.5% fee + (15.0 if cross-border else 0.0)
-     * - Any other tier: throw IllegalArgumentException("Unsupported tier: $tier")
+     * Calculates the transaction processing fee using idiomatic when and if expressions.
      */
     fun calculateTransactionFee(
         amount: Double,
         tier: String = "STANDARD",
         isCrossBorder: Boolean = false
     ): Double {
-        // TODO: Implement logic using when expression on tier.uppercase()
-        throw NotImplementedError("calculateTransactionFee is not yet implemented")
+        require(amount >= 0.0) { "Amount must not be negative: $amount" }
+
+        val normalizedTier = tier.uppercase()
+        val baseRate = when (normalizedTier) {
+            "VIP" -> 0.0
+            "GOLD" -> 0.01
+            "STANDARD" -> 0.025
+            else -> throw IllegalArgumentException("Unsupported tier: $tier")
+        }
+
+        val baseFee = amount * baseRate
+        val crossBorderFee = if (isCrossBorder) {
+            if (normalizedTier == "VIP") 5.0 else 15.0
+        } else {
+            0.0
+        }
+
+        return baseFee + crossBorderFee
     }
 
     /**
      * Generates an exponential backoff retry schedule for rate-limited clients.
-     *
-     * TODO: Task 2 - Generate exponential delays using range progression 0..<maxAttempts
-     * Formula: baseDelayMs * 2^attempt
+     * Uses the modern open-ended range `0..<maxAttempts`.
      */
     fun generateRetrySchedule(
         maxAttempts: Int = 4,
         baseDelayMs: Long = 100L
     ): List<Long> {
-        // TODO: Implement using 0..<maxAttempts
-        throw NotImplementedError("generateRetrySchedule is not yet implemented")
+        require(maxAttempts > 0) { "maxAttempts must be > 0" }
+        require(baseDelayMs > 0L) { "baseDelayMs must be > 0" }
+
+        return (0..<maxAttempts).map { attempt ->
+            baseDelayMs * (1L shl attempt)
+        }
     }
 
     /**
