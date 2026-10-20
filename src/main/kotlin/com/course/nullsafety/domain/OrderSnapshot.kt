@@ -6,12 +6,18 @@ data class OrderSnapshot(
     val total: Money,
     val status: String
 ) {
-    /**
-     * Applies a percentage discount and transitions status to "DISCOUNTED".
-     *
-     * TODO: Use .copy() to return a new OrderSnapshot without mutating this instance.
-     */
     fun applyDiscount(discountPercent: Int): OrderSnapshot {
-        throw NotImplementedError("applyDiscount is not yet implemented")
+        require(discountPercent in 1..100) {
+            "Discount percent must be between 1 and 100, got: $discountPercent"
+        }
+
+        val multiplier = (100 - discountPercent) / 100.0
+        val discountedAmount = total.amount.toDouble() * multiplier
+        val newTotal = Money.of(discountedAmount, total.currency)
+
+        return this.copy(
+            total = newTotal,
+            status = "DISCOUNTED"
+        )
     }
 }

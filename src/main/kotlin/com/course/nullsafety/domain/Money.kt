@@ -1,28 +1,30 @@
 package com.course.nullsafety.domain
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 
-data class Money(
+data class Money private constructor(
     val amount: BigDecimal,
     val currency: String
 ) {
-    // TODO: Task 1 - Make primary constructor private
-    // TODO: Task 2 - Add companion object with of() and zero() factories enforcing 2-decimal scale
-    // TODO: Task 3 - Implement operator fun plus(other: Money): Money
-
     companion object {
         const val DEFAULT_CURRENCY = "EGP"
 
         fun of(amount: Double, currency: String = DEFAULT_CURRENCY): Money {
-            throw NotImplementedError("of() factory is not yet implemented")
+            require(amount >= 0.0) { "Amount must not be negative: $amount" }
+            require(currency.isNotBlank()) { "Currency must not be blank" }
+
+            val scaled = BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP)
+            return Money(scaled, currency.trim().uppercase())
         }
 
-        fun zero(currency: String = DEFAULT_CURRENCY): Money {
-            throw NotImplementedError("zero() factory is not yet implemented")
-        }
+        fun zero(currency: String = DEFAULT_CURRENCY): Money = of(0.0, currency)
     }
 
     operator fun plus(other: Money): Money {
-        throw NotImplementedError("plus operator is not yet implemented")
+        require(currency == other.currency) {
+            "Currency mismatch: cannot add $currency and ${other.currency}"
+        }
+        return Money(amount + other.amount, currency)
     }
 }
