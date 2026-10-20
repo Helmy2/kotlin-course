@@ -93,7 +93,7 @@ const totalConcepts = modules.reduce((acc, m) => acc + m.concepts.length, 0);
 const totalBranches = totalConcepts * 2;
 ---
 
-<div class="branch-catalog-root">
+<div class="branch-catalog-root not-content">
 	<div class="catalog-summary-bar">
 		<div class="summary-pill">
 			<span class="pill-number">{totalConcepts}</span>
@@ -186,18 +186,21 @@ const totalBranches = totalConcepts * 2;
 	}
 	.catalog-summary-bar {
 		display: flex;
+		align-items: center;
 		gap: 1rem;
 		margin-bottom: 1.5rem;
 		flex-wrap: wrap;
 	}
 	.summary-pill {
-		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
 		background: var(--arch-surface, #111726);
 		border: 1px solid var(--arch-border, #1f2a3f);
 		border-radius: 4px;
-		padding: 0.5rem 1rem;
+		padding: 0.55rem 1rem;
+		white-space: nowrap;
+		box-sizing: border-box;
 	}
 	.summary-pill.highlight {
 		border-color: var(--arch-emerald, #10b981);
@@ -209,13 +212,17 @@ const totalBranches = totalConcepts * 2;
 		font-family: var(--sl-font-system-mono, monospace);
 		font-size: 1.25rem;
 		font-weight: 700;
+		line-height: 1;
 		color: var(--arch-cyan, #38bdf8);
 	}
 	.pill-label {
-		font-size: 0.85rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		line-height: 1;
 		color: var(--arch-ink-secondary, #94a3b8);
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.06em;
+		white-space: nowrap;
 	}
 	.catalog-search-wrap {
 		margin-bottom: 2rem;

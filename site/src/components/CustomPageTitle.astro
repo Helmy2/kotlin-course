@@ -3,17 +3,16 @@ import Default from '@astrojs/starlight/components/PageTitle.astro';
 import SlideLaunchBanner from './SlideLaunchBanner.astro';
 
 const route = Astro.locals.starlightRoute;
-const slug = route?.id || '';
+const rawSlug = route?.id || '';
+const cleanSlug = rawSlug.replace(/\.mdx?$/, '').replace(/\/$/, '');
 
 const moduleMap: Record<string, { title: string; count: number }> = {
-	'prologue': { title: '00. Architectural Prologue', count: 12 },
-	'clean-code': { title: '01. Clean Code Fundamentals', count: 70 },
-	'creational-patterns': { title: '02. Creational Design Patterns', count: 54 },
-	'structural-patterns': { title: '03. Structural Design Patterns', count: 59 },
-	'behavioral-patterns': { title: '04. Behavioral Design Patterns', count: 57 },
+	'core-kotlin': { title: '01. Core Kotlin Concepts', count: 37 },
+	'null-safety': { title: '02. Null Safety & Advanced Features', count: 30 },
+	'jvm-coroutines': { title: '03. JVM Interoperability & Coroutines', count: 30 },
 };
 
-const currentModule = moduleMap[slug];
+const currentModule = moduleMap[cleanSlug];
 ---
 
 <Default {...Astro.props}><slot /></Default>
@@ -21,7 +20,7 @@ const currentModule = moduleMap[slug];
 {currentModule && (
 	<SlideLaunchBanner 
 		title={currentModule.title} 
-		slug={slug} 
+		slug={cleanSlug} 
 		slideCount={currentModule.count} 
 	/>
 )}
