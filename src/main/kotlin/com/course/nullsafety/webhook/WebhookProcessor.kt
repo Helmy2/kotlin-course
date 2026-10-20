@@ -17,16 +17,31 @@ data class ValidatedBatch(
 
 object WebhookProcessor {
 
-    /**
-     * Sanitizes an unreliable third-party webhook payload.
-     *
-     * TODO: Implement guard clauses and collection pipeline:
-     * 1. Fail fast if payload or payload.transactionId is null/blank (throw IllegalArgumentException)
-     * 2. Normalize currency (fallback to "EGP")
-     * 3. Convert rawAmounts (handling null container, null items, non-numbers) into positive Double values
-     * 4. Return ValidatedBatch
-     */
     fun processWebhook(payload: WebhookPayload?): ValidatedBatch {
-        throw NotImplementedError("processWebhook is not yet implemented")
+        val safePayload = payload ?: throw IllegalArgumentException("Webhook payload must not be null")
+
+        val txId = safePayload.transactionId?.takeIf { it.isNotBlank() }
+            ?: throw IllegalArgumentException("Missing or blank transaction ID")
+
+        val currency = safePayload.currency
+            ?.trim()
+            ?.uppercase()
+            ?.takeIf { it.isNotBlank() }
+            ?: "EGP"
+
+        val validAmounts = safePayload.rawAmounts
+            .orEmpty()
+            .mapNotNull { it?.trim()?.toDoubleOrNull() }
+            .filter { it > 0.0 }
+
+        val total = validAmounts.sum()
+
+        return ValidatedBatch(
+            transactionId = txId,
+            customerEmail = safePayload.customerEmail?.trim()?.takeIf { it.isNotBlank() },
+            currency = currency,
+            validAmounts = validAmounts,
+            totalAmount = total
+        )
     }
 }
