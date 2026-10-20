@@ -4,7 +4,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -61,9 +60,13 @@ class KycVerificationServiceTest {
     @Test
     @DisplayName("Verification exceeding timeout throws TimeoutCancellationException")
     fun timeoutExceededThrows() = runTest {
-        assertThatThrownBy {
+        var thrown: Throwable? = null
+        try {
             // KYC concurrent takes 400ms; timeout is 250ms
             KycVerificationService.verifyKycWithTimeout("200000001", timeoutMs = 250L)
-        }.isInstanceOf(TimeoutCancellationException::class.java)
+        } catch (e: Throwable) {
+            thrown = e
+        }
+        assertThat(thrown).isInstanceOf(TimeoutCancellationException::class.java)
     }
 }
