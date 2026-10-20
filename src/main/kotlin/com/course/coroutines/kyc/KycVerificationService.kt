@@ -1,6 +1,10 @@
 package com.course.coroutines.kyc
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
+import kotlin.system.measureTimeMillis
 
 data class KycResult(
     val passed: Boolean,
@@ -27,28 +31,44 @@ object KycVerificationService {
 
     /**
      * Executes the 3 KYC checks serially.
-     *
-     * TODO: Task 1 - Call checkNationalId, checkSanctionsList, checkCreditScore sequentially
      */
     suspend fun verifyKycSequential(id: String): KycResult {
-        throw NotImplementedError("verifyKycSequential is not yet implemented")
+        val details = mutableMapOf<String, Boolean>()
+        val elapsed = measureTimeMillis {
+            details["nationalId"] = checkNationalId(id)
+            details["sanctions"] = checkSanctionsList(id)
+            details["creditScore"] = checkCreditScore(id)
+        }
+
+        val allPassed = details.values.all { it }
+        return KycResult(passed = allPassed, executionTimeMs = elapsed, details = details)
     }
 
     /**
      * Executes the 3 KYC checks concurrently using async/await inside coroutineScope.
-     *
-     * TODO: Task 2 - Launch checks concurrently with async, then await results
      */
-    suspend fun verifyKycConcurrent(id: String): KycResult {
-        throw NotImplementedError("verifyKycConcurrent is not yet implemented")
+    suspend fun verifyKycConcurrent(id: String): KycResult = coroutineScope {
+        val details = mutableMapOf<String, Boolean>()
+        val elapsed = measureTimeMillis {
+            val nationalIdDeferred = async { checkNationalId(id) }
+            val sanctionsDeferred = async { checkSanctionsList(id) }
+            val creditScoreDeferred = async { checkCreditScore(id) }
+
+            details["nationalId"] = nationalIdDeferred.await()
+            details["sanctions"] = sanctionsDeferred.await()
+            details["creditScore"] = creditScoreDeferred.await()
+        }
+
+        val allPassed = details.values.all { it }
+        KycResult(passed = allPassed, executionTimeMs = elapsed, details = details)
     }
 
     /**
      * Executes concurrent KYC verification bounded by a timeout.
-     *
-     * TODO: Task 3 - Wrap verifyKycConcurrent in withTimeout
      */
     suspend fun verifyKycWithTimeout(id: String, timeoutMs: Long): KycResult {
-        throw NotImplementedError("verifyKycWithTimeout is not yet implemented")
+        return withTimeout(timeoutMs) {
+            verifyKycConcurrent(id)
+        }
     }
 }
