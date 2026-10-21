@@ -10,27 +10,59 @@ if (!fs.existsSync(TARGET_DIR)) {
 
 const modules = [
 	{
-		source: '05. Core Kotlin Concepts.md',
+		source: '01. Core Kotlin Concepts.md',
 		target: 'core-kotlin.md',
 		title: '01. Core Kotlin Concepts',
 		description: 'Modern backend Kotlin fundamentals: Syntax, Expressions, Control Flow, and Object-Oriented Design.',
 		slug: 'core-kotlin',
 	},
 	{
-		source: '06. Null Safety and Advanced Features.md',
+		source: '02. Null Safety and Advanced Features.md',
 		target: 'null-safety.md',
-		title: '02. Null Safety & Advanced Features',
-		description: 'Compile-time null safety, Data Classes, Extension Functions, and First-Class Singletons.',
+		title: '02. Null Safety & Domain Modeling',
+		description: 'Compile-time null safety, Scope Functions, Data Classes, Sealed Hierarchies, and Value Classes.',
 		slug: 'null-safety',
 	},
 	{
-		source: '07. JVM Interoperability and Coroutines.md',
-		target: 'jvm-coroutines.md',
-		title: '03. JVM Interoperability & Coroutines',
-		description: 'Two-way Java/Kotlin interop, Coroutines, Structured Concurrency, and Spring Boot Non-Blocking Aggregation.',
-		slug: 'jvm-coroutines',
+		source: '03. Generics Delegation and Collections.md',
+		target: 'generics-delegation.md',
+		title: '03. Generics, Delegation & Collections',
+		description: 'Declaration-site variance (in/out), Reified types, Standard Library Delegation, and Lazy Sequences.',
+		slug: 'generics-delegation',
+	},
+	{
+		source: '04. JVM Interoperability.md',
+		target: 'jvm-interop.md',
+		title: '04. Polyglot JVM Interoperability',
+		description: 'Two-way Java/Kotlin interop, Annotation Use-Site Targets, SAM interfaces, and Bytecode Plugins.',
+		slug: 'jvm-interop',
+	},
+	{
+		source: '05. Coroutines and Structured Concurrency.md',
+		target: 'coroutines-concurrency.md',
+		title: '05. Coroutines & Structured Concurrency',
+		description: 'Suspending functions, Structured Concurrency, Dispatchers, Cooperative Cancellation, and MDC Context.',
+		slug: 'coroutines-concurrency',
+	},
+	{
+		source: '06. Asynchronous Streams and Kotlin Flow.md',
+		target: 'async-flow.md',
+		title: '06. Reactive Streams with Kotlin Flow',
+		description: 'Reactive non-blocking data pipelines with Kotlin Flow, Channels, Type-Safe Builders, and kotlinx ecosystem.',
+		slug: 'async-flow',
 	},
 ];
+
+// Clean up any stale or obsolete files in TARGET_DIR
+const validTargets = new Set(modules.flatMap(m => [m.target, m.target.replace('.md', '.mdx')]));
+if (fs.existsSync(TARGET_DIR)) {
+	for (const file of fs.readdirSync(TARGET_DIR)) {
+		if (file.endsWith('.md') && !validTargets.has(file)) {
+			console.log(`Removing obsolete file: ${file}`);
+			fs.unlinkSync(path.join(TARGET_DIR, file));
+		}
+	}
+}
 
 for (const mod of modules) {
 	// Clean up any old .mdx file with the same base name

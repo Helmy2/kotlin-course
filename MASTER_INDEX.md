@@ -88,3 +88,38 @@ When designing Kotlin services or libraries that must be seamlessly consumed by 
    - Static factory functions (e.g., `Money.of(...)` or `Money.zero()`) allow descriptive naming, caching, and invariant validation before allocating objects.
 4. **Never Ignore `CancellationException`:**
    - When catching `Exception` inside coroutines, always rethrow `CancellationException` so cooperative cancellation signals are respected by the coroutine engine!
+
+---
+
+## 8. Generics & Variance Reference Matrix
+
+| Variance / Feature | Syntax | Position Allowed | Subtyping Behavior | Primary Backend Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **Covariance** | `out T` | Output only (return type) | `Producer<Sub>` is subtype of `Producer<Super>` | Read-only data sources, event streams (`EventSource<out T>`), read-only collections (`List<out E>`). |
+| **Contravariance** | `in T` | Input only (method arguments) | `Consumer<Super>` is subtype of `Consumer<Sub>` | Event listeners (`EventListener<in E>`), comparators (`Comparator<in T>`), serializers. |
+| **Invariance** | `T` (default) | Both input and output | No subtyping between generic instances | Mutable containers (`MutableList<T>`, `AtomicReference<T>`). |
+| **Star Projection** | `*` | Type arguments | Safely unknown type (equivalent to `out Any?`) | Inspecting heterogeneous collections without unsafe casts (`List<*>`). |
+| **Reified Types** | `inline fun <reified T>` | Function parameter | Keeps `T::class` alive at runtime on JVM | Eliminating `Class<T>` tokens in REST clients, JSON parsers, and event dispatchers. |
+
+---
+
+## 9. Standard Delegation & Property Delegate Matrix
+
+| Delegate | Mechanism | Thread Safety | Primary Backend Use Case |
+| :--- | :--- | :--- | :--- |
+| **Class Delegation** | `class Svc(val inner: Repo) : Repo by inner` | Inherited from inner instance | 1-line implementation of GoF Decorator pattern for metrics, caching, and auditing. |
+| **`by lazy`** | `by lazy(mode) { ... }` | `SYNCHRONIZED`, `PUBLICATION`, `NONE` | Thread-safe deferred initialization of heavy clients, HSM keys, and connection pools. |
+| **`Delegates.observable`** | `by Delegates.observable(init) { prop, old, new -> ... }` | Synchronous callback on assignment | Immediate audit logging and event dispatching on property state change. |
+| **`Delegates.vetoable`** | `by Delegates.vetoable(init) { prop, old, candidate -> Boolean }` | Synchronous validation guard | Business invariant validation that vetoes illegal transitions before mutation. |
+| **`Delegates.notNull`** | `by Delegates.notNull<T>()` | Throws `IllegalStateException` on uninitialized get | Late initialization for primitive types (`Int`, `Long`, `Double`) where `lateinit` is illegal. |
+
+---
+
+## 10. Annotation Use-Site Targets Matrix
+
+| Target | Bytecode Placement | Framework Consumer | Critical Backend Gotcha |
+| :--- | :--- | :--- | :--- |
+| **`@field:`** | Private backing field | Spring Validation (`@field:NotNull`, `@field:Size`), JPA/Hibernate (`@Id`, `@Column`), Jackson `@JsonProperty` | Without `@field:`, validation annotations on constructor params are ignored by Hibernate Validator! |
+| **`@get:`** | Getter method | Spring Security `@PreAuthorize`, Jackson `@JsonGetter`, Custom bytecode names `@get:JvmName` | Required when framework evaluates properties through reflection via getter methods. |
+| **`@param:`** | Constructor parameter | Spring Dependency Injection (`@param:Qualifier`), Jackson `@JsonProperty` on deserialization | Applied to constructor argument during object instantiation. |
+| **`@set:`** | Setter method | Spring Property Injection (`@set:Value`) | Used for mutating properties via setters in Spring configuration beans. |

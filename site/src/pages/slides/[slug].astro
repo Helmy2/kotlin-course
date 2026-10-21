@@ -9,24 +9,48 @@ export function getStaticPaths() {
 			params: { slug: 'core-kotlin' },
 			props: {
 				title: '01. Core Kotlin Concepts',
-				file: '05. Core Kotlin Concepts.md',
+				file: '01. Core Kotlin Concepts.md',
 				handbookSlug: 'core-kotlin',
 			},
 		},
 		{
 			params: { slug: 'null-safety' },
 			props: {
-				title: '02. Null Safety & Advanced Features',
-				file: '06. Null Safety and Advanced Features.md',
+				title: '02. Null Safety & Domain Modeling',
+				file: '02. Null Safety and Advanced Features.md',
 				handbookSlug: 'null-safety',
 			},
 		},
 		{
-			params: { slug: 'jvm-coroutines' },
+			params: { slug: 'generics-delegation' },
 			props: {
-				title: '03. JVM Interoperability & Coroutines',
-				file: '07. JVM Interoperability and Coroutines.md',
-				handbookSlug: 'jvm-coroutines',
+				title: '03. Generics, Delegation & Collections',
+				file: '03. Generics Delegation and Collections.md',
+				handbookSlug: 'generics-delegation',
+			},
+		},
+		{
+			params: { slug: 'jvm-interop' },
+			props: {
+				title: '04. Polyglot JVM Interoperability',
+				file: '04. JVM Interoperability.md',
+				handbookSlug: 'jvm-interop',
+			},
+		},
+		{
+			params: { slug: 'coroutines-concurrency' },
+			props: {
+				title: '05. Coroutines & Structured Concurrency',
+				file: '05. Coroutines and Structured Concurrency.md',
+				handbookSlug: 'coroutines-concurrency',
+			},
+		},
+		{
+			params: { slug: 'async-flow' },
+			props: {
+				title: '06. Reactive Streams with Kotlin Flow',
+				file: '06. Asynchronous Streams and Kotlin Flow.md',
+				handbookSlug: 'async-flow',
 			},
 		},
 	];

@@ -7,9 +7,12 @@ const rawSlug = route?.id || '';
 const cleanSlug = rawSlug.replace(/\.mdx?$/, '').replace(/\/$/, '');
 
 const moduleMap: Record<string, { title: string; count: number }> = {
-	'core-kotlin': { title: '01. Core Kotlin Concepts', count: 41 },
-	'null-safety': { title: '02. Null Safety & Advanced Features', count: 35 },
-	'jvm-coroutines': { title: '03. JVM Interoperability & Coroutines', count: 33 },
+	'core-kotlin': { title: '01. Core Kotlin Concepts', count: 45 },
+	'null-safety': { title: '02. Null Safety & Domain Modeling', count: 44 },
+	'generics-delegation': { title: '03. Generics, Delegation & Collections', count: 31 },
+	'jvm-interop': { title: '04. Polyglot JVM Interoperability', count: 16 },
+	'coroutines-concurrency': { title: '05. Coroutines & Structured Concurrency', count: 20 },
+	'async-flow': { title: '06. Reactive Streams with Kotlin Flow', count: 16 },
 };
 
 const currentModule = moduleMap[cleanSlug];

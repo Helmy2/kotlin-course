@@ -5,14 +5,14 @@ description: "A production-grade curriculum covering modern server-side Kotlin, 
 
 ## Curriculum Architecture
 
-This course is structured across **3 Core Days** spanning 9 hands-on concepts, moving from foundational syntax and expression-oriented design to compile-time null safety, polyglot JVM interoperability, and high-throughput structured concurrency.
+This course is structured across **6 Core Topics**, moving progressively from foundational syntax and expression-oriented design to compile-time null safety, type variance, standard delegation, polyglot JVM interoperability, structured concurrency, and reactive streaming with Kotlin Flow.
 
 <div class="module-matrix">
   <div class="matrix-row">
     <div class="matrix-col-id">01</div>
     <div class="matrix-col-content">
-      <h3>Day 1: Core Kotlin Concepts & Java Migration</h3>
-      <p>Modern backend environment setup, expressions over statements (<code>when</code>, <code>if</code>), range progressions, default and named arguments, class initialization, properties vs fields, and strangler-fig Java migration.</p>
+      <h3>Topic 01: Core Kotlin Concepts & Java Migration</h3>
+      <p>Modern backend environment setup, expressions over statements (<code>when</code>, <code>if</code>), range progressions, default and named arguments, type hierarchy (<code>Any</code>, <code>Unit</code>, <code>Nothing</code>), properties vs fields, and strangler-fig Java migration.</p>
       <div class="matrix-links">
         <a href="/kotlin-course/core-kotlin/" class="matrix-btn-handbook">
           <span>Read Handbook</span>
@@ -28,8 +28,8 @@ This course is structured across **3 Core Days** spanning 9 hands-on concepts, m
   <div class="matrix-row">
     <div class="matrix-col-id">02</div>
     <div class="matrix-col-content">
-      <h3>Day 2: Null Safety & Advanced Idioms</h3>
-      <p>Moving NullPointerException from production runtime to compile time. Null-safe operator toolkit (<code>?.</code>, <code>?:</code>, <code>as?</code>), nullable collections, data classes with immutable <code>copy()</code>, extension functions as anti-corruption layers, and thread-safe <code>object</code> singletons.</p>
+      <h3>Topic 02: Null Safety & Domain Modeling</h3>
+      <p>Moving NullPointerException from production runtime to compile time. Null-safe operator toolkit (<code>?.</code>, <code>?:</code>, <code>as?</code>), Scope Functions matrix, <code>data class</code> value semantics, <code>sealed interface</code> outcome modeling, and <code>@JvmInline value class</code> zero-allocation primitives.</p>
       <div class="matrix-links">
         <a href="/kotlin-course/null-safety/" class="matrix-btn-handbook">
           <span>Read Handbook</span>
@@ -45,13 +45,64 @@ This course is structured across **3 Core Days** spanning 9 hands-on concepts, m
   <div class="matrix-row">
     <div class="matrix-col-id">03</div>
     <div class="matrix-col-content">
-      <h3>Day 3: JVM Interoperability & Coroutines</h3>
-      <p>Two-way polyglot Java ↔ Kotlin interop, <code>@JvmStatic</code>, <code>@JvmOverloads</code>, <code>@JvmField</code>, <code>@Throws</code>, avoiding platform type hazards, coroutines vs OS threads, structured concurrency scopes (<code>coroutineScope</code> vs <code>supervisorScope</code>), dispatchers, and Spring Boot non-blocking aggregation.</p>
+      <h3>Topic 03: Generics, Delegation & Collections</h3>
+      <p>Declaration-site variance (<code>out T</code> producer, <code>in T</code> consumer), multi-bounds constraints, <code>inline fun &lt;reified T&gt;</code> type preservation, Standard Library Delegation (<code>by lazy</code>, <code>Delegates.observable</code>, <code>Delegates.vetoable</code>, <code>by</code>), and high-throughput lazy <code>Sequence</code> pipelines.</p>
       <div class="matrix-links">
-        <a href="/kotlin-course/jvm-coroutines/" class="matrix-btn-handbook">
+        <a href="/kotlin-course/generics-delegation/" class="matrix-btn-handbook">
           <span>Read Handbook</span>
         </a>
-        <a href="/kotlin-course/slides/jvm-coroutines/" target="_blank" class="matrix-btn-slides">
+        <a href="/kotlin-course/slides/generics-delegation/" target="_blank" class="matrix-btn-slides">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Launch Slide Deck ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-row">
+    <div class="matrix-col-id">04</div>
+    <div class="matrix-col-content">
+      <h3>Topic 04: Polyglot JVM Interoperability</h3>
+      <p>Two-way Java ↔ Kotlin interoperability, platform types (<code>T!</code>), <code>@JvmStatic</code>, <code>@JvmOverloads</code>, <code>@JvmField</code>, <code>@Throws</code>, Annotation Use-Site Targets (<code>@field:</code>, <code>@get:</code>, <code>@param:</code>), SAM interfaces (<code>fun interface</code>), and Spring/JPA compiler plugins.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/jvm-interop/" class="matrix-btn-handbook">
+          <span>Read Handbook</span>
+        </a>
+        <a href="/kotlin-course/slides/jvm-interop/" target="_blank" class="matrix-btn-slides">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Launch Slide Deck ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-row">
+    <div class="matrix-col-id">05</div>
+    <div class="matrix-col-content">
+      <h3>Topic 05: Asynchronous Concurrency with Coroutines</h3>
+      <p>Coroutines vs OS threads, Continuation Passing Style (CPS), dispatchers, Structured Concurrency (<code>coroutineScope</code> vs <code>supervisorScope</code>), the async-style anti-pattern, cooperative cancellation internals, and Slf4j MDC trace context propagation.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/coroutines-concurrency/" class="matrix-btn-handbook">
+          <span>Read Handbook</span>
+        </a>
+        <a href="/kotlin-course/slides/coroutines-concurrency/" target="_blank" class="matrix-btn-slides">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Launch Slide Deck ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="matrix-row">
+    <div class="matrix-col-id">06</div>
+    <div class="matrix-col-content">
+      <h3>Topic 06: Reactive Streams with Flow & kotlinx Ecosystem</h3>
+      <p>Cold <code>Flow</code> vs hot streams (<code>SharedFlow</code>, <code>StateFlow</code>), reactive backpressure, point-to-point <code>Channel</code> worker pools, Spring Boot 3+ SSE/R2DBC streaming, Type-Safe Builders with <code>@DslMarker</code>, reflectionless <code>kotlinx.serialization</code>, and fast virtual-time testing with <code>runTest</code>.</p>
+      <div class="matrix-links">
+        <a href="/kotlin-course/async-flow/" class="matrix-btn-handbook">
+          <span>Read Handbook</span>
+        </a>
+        <a href="/kotlin-course/slides/async-flow/" target="_blank" class="matrix-btn-slides">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
           <span>Launch Slide Deck ↗</span>
         </a>

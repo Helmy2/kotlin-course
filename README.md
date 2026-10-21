@@ -91,10 +91,13 @@ git switch 01-rate-limiter-fee-engine-solution
 
 ## Course Documentation & Resources
 - 📖 **Course Slide Handbooks**:
-  - [05. Core Kotlin Concepts](docs/05.%20Core%20Kotlin%20Concepts.md)
-  - [06. Null Safety and Advanced Features](docs/06.%20Null%20Safety%20and%20Advanced%20Features.md)
-  - [07. JVM Interoperability and Coroutines](docs/07.%20JVM%20Interoperability%20and%20Coroutines.md)
-- 📐 **[Kotlin Backend Master Index](MASTER_INDEX.md)**: Null safety matrix, scope functions guide, `@Jvm*` interop rules, and structured concurrency guide.
+  - [01. Core Kotlin Concepts](docs/01.%20Core%20Kotlin%20Concepts.md)
+  - [02. Null Safety and Advanced Features](docs/02.%20Null%20Safety%20and%20Advanced%20Features.md)
+  - [03. Generics, Delegation and Collections](docs/03.%20Generics%20Delegation%20and%20Collections.md)
+  - [04. JVM Interoperability](docs/04.%20JVM%20Interoperability.md)
+  - [05. Coroutines and Structured Concurrency](docs/05.%20Coroutines%20and%20Structured%20Concurrency.md)
+  - [06. Asynchronous Streams and Kotlin Flow](docs/06.%20Asynchronous%20Streams%20and%20Kotlin%20Flow.md)
+- 📐 **[Kotlin Backend Master Index](MASTER_INDEX.md)**: Null safety matrix, scope functions guide, generics & variance matrix, delegation matrix, `@Jvm*` interop rules, and structured concurrency guide.
 - 🗂️ **[Detailed Branch Catalog](docs/BRANCHES.md)**: Complete catalog of all 18 branches with focus areas and key files.
 - 🌐 **Interactive Documentation Site**: Run `npm run site:dev` to launch the Astro Starlight documentation portal and full-screen presentation slide deck runner.
 

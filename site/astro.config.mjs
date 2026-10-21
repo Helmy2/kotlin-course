@@ -26,11 +26,14 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Core Modules (Days 1–3)',
+					label: 'Course Topics (01–06)',
 					items: [
 						{ label: '01. Core Kotlin Concepts', slug: 'core-kotlin' },
-						{ label: '02. Null Safety & Advanced Features', slug: 'null-safety' },
-						{ label: '03. JVM Interop & Coroutines', slug: 'jvm-coroutines' },
+						{ label: '02. Null Safety & Domain Modeling', slug: 'null-safety' },
+						{ label: '03. Generics, Delegation & Collections', slug: 'generics-delegation' },
+						{ label: '04. Polyglot JVM Interoperability', slug: 'jvm-interop' },
+						{ label: '05. Coroutines & Concurrency', slug: 'coroutines-concurrency' },
+						{ label: '06. Reactive Streams & Flow', slug: 'async-flow' },
 					],
 				},
 				{
