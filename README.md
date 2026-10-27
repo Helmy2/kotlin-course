@@ -1,5 +1,19 @@
 # Kotlin for Backend Engineering Master Course
 
+<div align="center">
+
+### 🇵🇸 Free Palestine · فلسطين حرة · Boycott
+
+[![Free Palestine](https://img.shields.io/badge/Free-Palestine-007A3D?style=for-the-badge&logoColor=white)](https://bdsmovement.net/)
+[![Solidarity](https://img.shields.io/badge/Solidarity-Peace%20%26%20Justice-E4312B?style=for-the-badge)](https://bdsmovement.net/)
+[![Boycott](https://img.shields.io/badge/Boycott-قاطع-000000?style=for-the-badge)](https://bdsmovement.net/)
+
+*Standing in solidarity with Palestine for human dignity, justice, freedom, and universal human rights.*
+
+---
+
+</div>
+
 Welcome to the hands-on repository for the **Kotlin for Backend Engineering Master Course**!
 
 This project provides a comprehensive, production-grade guide to mastering modern server-side development with **Kotlin 2.x**, **Java 21 LTS**, and **Spring Boot 4.x/3.4+**, moving beyond boilerplate Java ceremony to build resilient, idiomatic, and high-throughput systems.
